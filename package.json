@@ -1,0 +1,36 @@
+{
+  "name": "my-portfolio",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "postinstall": "prisma skills sync || exit 0",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:studio": "prisma studio"
+  },
+  "dependencies": {
+    "@prisma/client": "^7.10.0",
+    "better-sqlite3": "^13.0.3",
+    "framer-motion": "^13.1.1",
+    "lucide-react": "^1.39.0",
+    "next": "16.3.4",
+    "prisma": "^8.0.0-rc.12",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "sqlite3": "^6.0.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.3.4",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
