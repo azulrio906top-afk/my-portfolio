@@ -3,6 +3,15 @@ import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/db';
 import { createProject, createSkill, deleteProject, deleteSkill, updateProject, updateSkill } from './actions';
 
+function isMissingTableError(error: unknown) {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    error.code === 'P2021'
+  );
+}
+
 export default async function AdminPage() {
   const session = await auth();
 
@@ -10,10 +19,29 @@ export default async function AdminPage() {
     redirect('/admin/login');
   }
 
-  const [skills, projects] = await Promise.all([
-    prisma.skill.findMany({ orderBy: { order: 'asc' } }),
-    prisma.project.findMany({ orderBy: { createdAt: 'desc' } }),
-  ]);
+  const loadSkills = async () => {
+    try {
+      return await prisma.skill.findMany({ orderBy: { order: 'asc' } });
+    } catch (error) {
+      if (isMissingTableError(error)) {
+        return [] as Array<{ id: number; name: string; category: string; order: number }>;
+      }
+      throw error;
+    }
+  };
+
+  const loadProjects = async () => {
+    try {
+      return await prisma.project.findMany({ orderBy: { createdAt: 'desc' } });
+    } catch (error) {
+      if (isMissingTableError(error)) {
+        return [] as Array<{ id: number; title: string; slug: string; status: string; summary: string; url?: string | null; githubUrl?: string | null; imageUrl?: string | null; tags: string; featured: boolean; description: string }>;
+      }
+      throw error;
+    }
+  };
+
+  const [skills, projects] = await Promise.all([loadSkills(), loadProjects()]);
 
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-12 text-slate-50">
