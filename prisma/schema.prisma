@@ -7,11 +7,37 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Skill {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  category  String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model Project {
   id          Int      @id @default(autoincrement())
   title       String
+  slug        String   @unique
+  summary     String
   description String
   url         String?
+  githubUrl   String?
+  imageUrl    String?
+  featured    Boolean  @default(false)
+  status      String   @default("active")
+  tags        String   @default("")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String   @default("admin")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
