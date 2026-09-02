@@ -11,6 +11,10 @@ import {
     deleteSkill,
     updateProject,
     updateSkill,
+    updateProfile,
+    createExperience,
+    updateExperience,
+    deleteExperience,
 } from './actions';
 
 function isMissingTableError(error: unknown) {
@@ -30,6 +34,36 @@ export default async function AdminPage() {
     }
 
     await ensureDatabase();
+
+    const loadProfile = async () => {
+        try {
+            return await prisma.profile.findFirst({
+                orderBy: { id: 'asc' },
+            });
+        } catch (error) {
+            if (isMissingTableError(error)) {
+                return null;
+            }
+
+            throw error;
+        }
+    };
+
+    const loadExperience = async () => {
+        try {
+            return await prisma.experience.findMany({
+                orderBy: {
+                    startDate: 'desc',
+                },
+            });
+        } catch (error) {
+            if (isMissingTableError(error)) {
+                return [];
+            }
+
+            throw error;
+        }
+    };
 
     const loadSkills = async () => {
         try {
@@ -53,7 +87,17 @@ export default async function AdminPage() {
         }
     };
 
-    const [skills, projects] = await Promise.all([loadSkills(), loadProjects()]);
+    const [
+        profile,
+        skills,
+        projects,
+        experience,
+    ] = await Promise.all([
+        loadProfile(),
+        loadSkills(),
+        loadProjects(),
+        loadExperience(),
+    ]);
 
     return (
         <div className="mx-auto max-w-7xl">
@@ -76,14 +120,20 @@ export default async function AdminPage() {
             </header>
 
             <AdminDashboard
+                profile={profile}
                 skills={skills}
                 projects={projects}
+                experience={experience}
+                updateProfileAction={updateProfile}
                 createSkillAction={createSkill}
                 updateSkillAction={updateSkill}
                 deleteSkillAction={deleteSkill}
                 createProjectAction={createProject}
                 updateProjectAction={updateProject}
                 deleteProjectAction={deleteProject}
+                createExperienceAction={createExperience}
+                updateExperienceAction={updateExperience}
+                deleteExperienceAction={deleteExperience}
             />
         </div>
     );

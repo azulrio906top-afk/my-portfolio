@@ -41,3 +41,28 @@ model AdminUser {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
+
+model Profile {
+  id           Int      @id @default(autoincrement())
+  name         String
+  title        String
+  email        String?
+  location     String?
+  summary      String
+  availability String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Experience {
+  id          Int      @id @default(autoincrement())
+  company     String
+  position    String
+  startDate   String
+  endDate     String?
+  description String
+  technologies String  @default("")
+  current     Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

@@ -4,6 +4,8 @@ type PrismaClientLike = {
   skill: any;
   project: any;
   adminUser: any;
+  profile: any;
+  experience: any;
   $disconnect: () => Promise<void>;
   $on: (...args: any[]) => void;
   $queryRawUnsafe: <T = unknown>(query: string, ...values: any[]) => Promise<T>;
@@ -68,6 +70,31 @@ const createSql = `
     "createdAt" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
+
+  CREATE TABLE IF NOT EXISTS "Profile" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "name" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "email" TEXT,
+    "location" TEXT,
+    "summary" TEXT NOT NULL,
+    "availability" TEXT,
+    "createdAt" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS "Experience" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "company" TEXT NOT NULL,
+    "position" TEXT NOT NULL,
+    "startDate" TEXT NOT NULL,
+    "endDate" TEXT,
+    "description" TEXT NOT NULL,
+    "technologies" TEXT NOT NULL DEFAULT '',
+    "current" INTEGER NOT NULL DEFAULT 0,
+    "createdAt" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
 `;
 
 async function rebuildDatabase() {
@@ -83,11 +110,11 @@ export async function ensureDatabase() {
   globalForPrisma.databaseInitPromise = (async () => {
     try {
       const existingTables = await prisma.$queryRawUnsafe<Array<{ name: string }>>(
-        `SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('Skill', 'Project', 'AdminUser');`,
+        `SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('Skill', 'Project', 'AdminUser', 'Profile', 'Experience');`,
       );
 
       const tableSet = new Set(existingTables.map((row) => row.name));
-      const missing = ['Skill', 'Project', 'AdminUser'].filter((table) => !tableSet.has(table));
+      const missing = ['Skill', 'Project', 'AdminUser', 'Profile', 'Experience'].filter((table) => !tableSet.has(table));
 
       if (missing.length > 0) {
         await rebuildDatabase();

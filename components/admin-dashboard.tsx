@@ -25,26 +25,96 @@ type Project = {
   description: string;
 };
 
+type Profile = {
+  id: number;
+  name: string;
+  title: string;
+  email: string | null;
+  location: string | null;
+  summary: string;
+  availability: string | null;
+};
+
+type Experience = {
+  id: number;
+  company: string;
+  position: string;
+  startDate: string;
+  endDate: string | null;
+  description: string;
+  technologies: string;
+  current: boolean;
+};
+
 type AdminDashboardProps = {
+  profile: Profile | null;
+
   skills: Skill[];
+
   projects: Project[];
-  createSkillAction: (formData: FormData) => Promise<unknown>;
-  updateSkillAction: (formData: FormData) => Promise<unknown>;
-  deleteSkillAction: (formData: FormData) => Promise<unknown>;
-  createProjectAction: (formData: FormData) => Promise<unknown>;
-  updateProjectAction: (formData: FormData) => Promise<unknown>;
-  deleteProjectAction: (formData: FormData) => Promise<unknown>;
+
+  experience: Experience[];
+
+  updateProfileAction: (
+    formData: FormData,
+  ) => Promise<unknown>;
+
+  createSkillAction: (
+    formData: FormData,
+  ) => Promise<unknown>;
+
+  updateSkillAction: (
+    formData: FormData,
+  ) => Promise<unknown>;
+
+  deleteSkillAction: (
+    formData: FormData,
+  ) => Promise<unknown>;
+
+  createProjectAction: (
+    formData: FormData,
+  ) => Promise<unknown>;
+
+  updateProjectAction: (
+    formData: FormData,
+  ) => Promise<unknown>;
+
+  deleteProjectAction: (
+    formData: FormData,
+  ) => Promise<unknown>;
+
+  createExperienceAction: (
+    formData: FormData,
+  ) => Promise<unknown>;
+
+  updateExperienceAction: (
+    formData: FormData,
+  ) => Promise<unknown>;
+
+  deleteExperienceAction: (
+    formData: FormData,
+  ) => Promise<unknown>;
 };
 
 export function AdminDashboard({
+  profile,
   skills,
   projects,
+  experience,
+
+  updateProfileAction,
+
   createSkillAction,
   updateSkillAction,
   deleteSkillAction,
+
   createProjectAction,
   updateProjectAction,
   deleteProjectAction,
+
+  createExperienceAction,
+  updateExperienceAction,
+  deleteExperienceAction,
 }: AdminDashboardProps) {
   const router = useRouter();
   const [notice, setNotice] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -78,17 +148,120 @@ export function AdminDashboard({
         <div className="mb-8 rounded-3xl border border-[var(--border)] bg-[var(--panel)] p-5 text-[var(--foreground)] shadow-lg shadow-slate-900/5">
           {notice ? (
             <div
-              className={`rounded-2xl border px-4 py-3 text-sm ${
-                notice.type === 'success'
-                  ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200'
-                  : 'border-slate-200 bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-200'
-              }`}
+              className={`rounded-2xl border px-4 py-3 text-sm ${notice.type === 'success'
+                ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200'
+                : 'border-slate-200 bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-200'
+                }`}
             >
               {notice.text}
             </div>
           ) : null}
         </div>
+        <section
+          className={`${panelClass} mb-6 border-[var(--border)] bg-[var(--panel)] text-[var(--foreground)]`}
+        >
+          <div className="mb-5">
+            <p className="text-xs uppercase tracking-[0.22em] text-sky-500">
+              About you
+            </p>
 
+            <h2 className="mt-2 text-xl font-semibold">
+              Profile
+            </h2>
+
+            <p className="mt-1 text-sm text-[var(--muted)]">
+              This information helps clients understand who
+              you are and helps the AI assistant answer
+              questions about you.
+            </p>
+          </div>
+
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+
+              const form = event.currentTarget;
+              const formData = new FormData(form);
+
+              void runAction(
+                updateProfileAction,
+                formData,
+                'Profile updated successfully.',
+              );
+            }}
+            className="space-y-4"
+          >
+            {profile ? (
+              <input
+                type="hidden"
+                name="id"
+                value={profile.id}
+              />
+            ) : null}
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <input
+                name="name"
+                defaultValue={profile?.name ?? ''}
+                placeholder="Your name"
+                className={`${inputClass} border-[var(--input-border)] bg-[var(--input)] text-[var(--foreground)] placeholder:text-[var(--muted)]`}
+                required
+              />
+
+              <input
+                name="title"
+                defaultValue={profile?.title ?? ''}
+                placeholder="Professional title"
+                className={`${inputClass} border-[var(--input-border)] bg-[var(--input)] text-[var(--foreground)] placeholder:text-[var(--muted)]`}
+                required
+              />
+
+              <input
+                name="email"
+                type="email"
+                defaultValue={profile?.email ?? ''}
+                placeholder="Email"
+                className={`${inputClass} border-[var(--input-border)] bg-[var(--input)] text-[var(--foreground)] placeholder:text-[var(--muted)]`}
+              />
+
+              <input
+                name="location"
+                defaultValue={profile?.location ?? ''}
+                placeholder="Location"
+                className={`${inputClass} border-[var(--input-border)] bg-[var(--input)] text-[var(--foreground)] placeholder:text-[var(--muted)]`}
+              />
+
+              <input
+                name="availability"
+                defaultValue={
+                  profile?.availability ?? ''
+                }
+                placeholder="Availability"
+                className={`${inputClass} border-[var(--input-border)] bg-[var(--input)] text-[var(--foreground)] placeholder:text-[var(--muted)] md:col-span-2`}
+              />
+            </div>
+
+            <textarea
+              name="summary"
+              defaultValue={profile?.summary ?? ''}
+              placeholder="Write a strong professional summary..."
+              rows={5}
+              className="w-full rounded-xl border border-[var(--input-border)] bg-[var(--input)] px-3 py-2 text-sm text-[var(--foreground)] placeholder:text-[var(--muted)]"
+              required
+            />
+
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                className={`${iconButtonClass} w-auto gap-2 px-4 border-sky-500/40 bg-sky-500/10 text-sky-500 hover:bg-sky-500/20`}
+              >
+                <PencilLine className="h-4 w-4" />
+
+                Save profile
+              </button>
+            </div>
+          </form>
+        </section>
         <section className="grid gap-6 xl:grid-cols-2">
           <div className={`${panelClass} border-[var(--border)] bg-[var(--panel)] text-[var(--foreground)]`}>
             <div className="mb-5 flex items-center justify-between">
@@ -264,6 +437,239 @@ export function AdminDashboard({
                 ))
               )}
             </div>
+          </div>
+        </section>
+        <section
+          className={`${panelClass} mt-6 border-[var(--border)] bg-[var(--panel)] text-[var(--foreground)]`}
+        >
+          <div className="mb-5 flex items-center justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.22em] text-sky-500">
+                Career
+              </p>
+
+              <h2 className="mt-2 text-xl font-semibold">
+                Experience
+              </h2>
+
+              <p className="mt-1 text-sm text-[var(--muted)]">
+                Your work history becomes part of the chatbot's
+                knowledge.
+              </p>
+            </div>
+
+            <span className="rounded-full bg-sky-500/10 px-2.5 py-1 text-xs text-sky-500">
+              {experience.length} items
+            </span>
+          </div>
+
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+
+              const form = event.currentTarget;
+              const formData = new FormData(form);
+
+              void runAction(
+                createExperienceAction,
+                formData,
+                'Experience created successfully.',
+              );
+            }}
+            className="mb-6 space-y-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4"
+          >
+            <div className="grid gap-3 md:grid-cols-2">
+              <input
+                name="company"
+                placeholder="Company"
+                className={`${inputClass} border-[var(--input-border)] bg-[var(--input)] text-[var(--foreground)] placeholder:text-[var(--muted)]`}
+                required
+              />
+
+              <input
+                name="position"
+                placeholder="Position"
+                className={`${inputClass} border-[var(--input-border)] bg-[var(--input)] text-[var(--foreground)] placeholder:text-[var(--muted)]`}
+                required
+              />
+
+              <input
+                name="startDate"
+                placeholder="Start date (e.g. Jan 2024)"
+                className={`${inputClass} border-[var(--input-border)] bg-[var(--input)] text-[var(--foreground)] placeholder:text-[var(--muted)]`}
+                required
+              />
+
+              <input
+                name="endDate"
+                placeholder="End date (leave empty if current)"
+                className={`${inputClass} border-[var(--input-border)] bg-[var(--input)] text-[var(--foreground)] placeholder:text-[var(--muted)]`}
+              />
+            </div>
+
+            <input
+              name="technologies"
+              placeholder="Technologies: React, TypeScript, Node.js"
+              className={`${inputClass} w-full border-[var(--input-border)] bg-[var(--input)] text-[var(--foreground)] placeholder:text-[var(--muted)]`}
+            />
+
+            <textarea
+              name="description"
+              placeholder="Describe your responsibilities, achievements and work..."
+              rows={4}
+              className="w-full rounded-xl border border-[var(--input-border)] bg-[var(--input)] px-3 py-2 text-sm text-[var(--foreground)] placeholder:text-[var(--muted)]"
+              required
+            />
+
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2 text-sm text-[var(--foreground)]">
+                <input
+                  name="current"
+                  type="checkbox"
+                  className="h-4 w-4 accent-sky-500"
+                />
+
+                Current position
+              </label>
+
+              <button
+                type="submit"
+                className={`${iconButtonClass} w-auto gap-2 px-4 border-sky-500/40 bg-sky-500/10 text-sky-500 hover:bg-sky-500/20`}
+              >
+                <Plus className="h-4 w-4" />
+
+                Add experience
+              </button>
+            </div>
+          </form>
+
+          <div className="space-y-3">
+            {experience.length === 0 ? (
+              <div
+                className={`${cardClass} border border-dashed border-[var(--border)] bg-[var(--surface)] text-sm text-[var(--muted)]`}
+              >
+                No experience yet. Add your work history above.
+              </div>
+            ) : (
+              experience.map((item) => (
+                <div
+                  key={item.id}
+                  className={`${cardClass} border border-[var(--border)] bg-[var(--surface)]`}
+                >
+                  <form
+                    onSubmit={(event) => {
+                      event.preventDefault();
+
+                      const form = event.currentTarget;
+                      const formData =
+                        new FormData(form);
+
+                      void runAction(
+                        updateExperienceAction,
+                        formData,
+                        `${item.position} updated.`,
+                      );
+                    }}
+                    className="space-y-3"
+                  >
+                    <input
+                      type="hidden"
+                      name="id"
+                      value={item.id}
+                    />
+
+                    <div className="grid gap-3 md:grid-cols-2">
+                      <input
+                        name="company"
+                        defaultValue={item.company}
+                        className={`${inputClass} border-[var(--input-border)] bg-[var(--input)] text-[var(--foreground)]`}
+                        required
+                      />
+
+                      <input
+                        name="position"
+                        defaultValue={item.position}
+                        className={`${inputClass} border-[var(--input-border)] bg-[var(--input)] text-[var(--foreground)]`}
+                        required
+                      />
+
+                      <input
+                        name="startDate"
+                        defaultValue={item.startDate}
+                        className={`${inputClass} border-[var(--input-border)] bg-[var(--input)] text-[var(--foreground)]`}
+                        required
+                      />
+
+                      <input
+                        name="endDate"
+                        defaultValue={item.endDate ?? ''}
+                        className={`${inputClass} border-[var(--input-border)] bg-[var(--input)] text-[var(--foreground)]`}
+                      />
+                    </div>
+
+                    <input
+                      name="technologies"
+                      defaultValue={item.technologies}
+                      className={`${inputClass} w-full border-[var(--input-border)] bg-[var(--input)] text-[var(--foreground)]`}
+                    />
+
+                    <textarea
+                      name="description"
+                      defaultValue={item.description}
+                      rows={4}
+                      className="w-full rounded-xl border border-[var(--input-border)] bg-[var(--input)] px-3 py-2 text-sm text-[var(--foreground)]"
+                      required
+                    />
+
+                    <div className="flex items-center justify-between">
+                      <label className="flex items-center gap-2 text-sm">
+                        <input
+                          name="current"
+                          type="checkbox"
+                          defaultChecked={item.current}
+                          className="h-4 w-4 accent-sky-500"
+                        />
+
+                        Current position
+                      </label>
+
+                      <div className="flex gap-2">
+                        <button
+                          type="submit"
+                          className={`${iconButtonClass} border-sky-500/40 bg-sky-500/10 text-sky-500 hover:bg-sky-500/20`}
+                          aria-label={`Update ${item.position}`}
+                        >
+                          <PencilLine className="h-4 w-4" />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            const form =
+                              event.currentTarget.form;
+
+                            if (!form) return;
+
+                            const formData =
+                              new FormData(form);
+
+                            void runAction(
+                              deleteExperienceAction,
+                              formData,
+                              `${item.position} deleted.`,
+                            );
+                          }}
+                          className={`${iconButtonClass} border-slate-700/80 bg-slate-900/60 text-slate-300 hover:bg-slate-800`}
+                          aria-label={`Delete ${item.position}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+              ))
+            )}
           </div>
         </section>
       </div>

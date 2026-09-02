@@ -175,3 +175,221 @@ export async function deleteProject(formData: FormData) {
   revalidatePath('/admin');
   revalidatePath('/');
 }
+
+export async function updateProfile(
+  formData: FormData,
+) {
+  await requireAdmin();
+
+  const id = Number(
+    formData.get('id') ?? '0',
+  );
+
+  const name = String(
+    formData.get('name') ?? '',
+  ).trim();
+
+  const title = String(
+    formData.get('title') ?? '',
+  ).trim();
+
+  const email = String(
+    formData.get('email') ?? '',
+  ).trim();
+
+  const location = String(
+    formData.get('location') ?? '',
+  ).trim();
+
+  const summary = String(
+    formData.get('summary') ?? '',
+  ).trim();
+
+  const availability = String(
+    formData.get('availability') ?? '',
+  ).trim();
+
+  if (!name || !title || !summary) {
+    throw new Error(
+      'Name, title and summary are required.',
+    );
+  }
+
+  const data = {
+    name,
+    title,
+    email: email || null,
+    location: location || null,
+    summary,
+    availability: availability || null,
+    updatedAt: new Date().toISOString(),
+  };
+
+  if (id) {
+    await prisma.profile.update({
+      where: { id },
+      data,
+    });
+  } else {
+    await prisma.profile.create({
+      data: {
+        ...data,
+        createdAt: new Date().toISOString(),
+      },
+    });
+  }
+
+  revalidatePath('/admin');
+  revalidatePath('/');
+}
+
+export async function createExperience(
+  formData: FormData,
+) {
+  await requireAdmin();
+
+  const company = String(
+    formData.get('company') ?? '',
+  ).trim();
+
+  const position = String(
+    formData.get('position') ?? '',
+  ).trim();
+
+  const startDate = String(
+    formData.get('startDate') ?? '',
+  ).trim();
+
+  const endDate = String(
+    formData.get('endDate') ?? '',
+  ).trim();
+
+  const description = String(
+    formData.get('description') ?? '',
+  ).trim();
+
+  const technologies = String(
+    formData.get('technologies') ?? '',
+  ).trim();
+
+  const current =
+    formData.get('current') === 'on';
+
+  if (
+    !company ||
+    !position ||
+    !startDate ||
+    !description
+  ) {
+    throw new Error(
+      'Company, position, start date and description are required.',
+    );
+  }
+
+  await prisma.experience.create({
+    data: {
+      company,
+      position,
+      startDate,
+      endDate: endDate || null,
+      description,
+      technologies,
+      current,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    },
+  });
+
+  revalidatePath('/admin');
+  revalidatePath('/');
+}
+
+export async function updateExperience(
+  formData: FormData,
+) {
+  await requireAdmin();
+
+  const id = Number(
+    formData.get('id') ?? '0',
+  );
+
+  const company = String(
+    formData.get('company') ?? '',
+  ).trim();
+
+  const position = String(
+    formData.get('position') ?? '',
+  ).trim();
+
+  const startDate = String(
+    formData.get('startDate') ?? '',
+  ).trim();
+
+  const endDate = String(
+    formData.get('endDate') ?? '',
+  ).trim();
+
+  const description = String(
+    formData.get('description') ?? '',
+  ).trim();
+
+  const technologies = String(
+    formData.get('technologies') ?? '',
+  ).trim();
+
+  const current =
+    formData.get('current') === 'on';
+
+  if (
+    !id ||
+    !company ||
+    !position ||
+    !startDate ||
+    !description
+  ) {
+    throw new Error(
+      'Invalid experience data.',
+    );
+  }
+
+  await prisma.experience.update({
+    where: { id },
+
+    data: {
+      company,
+      position,
+      startDate,
+      endDate: endDate || null,
+      description,
+      technologies,
+      current,
+      updatedAt: new Date().toISOString(),
+    },
+  });
+
+  revalidatePath('/admin');
+  revalidatePath('/');
+}
+
+export async function deleteExperience(
+  formData: FormData,
+) {
+  await requireAdmin();
+
+  const id = Number(
+    formData.get('id') ?? '0',
+  );
+
+  if (!id) {
+    throw new Error(
+      'Invalid experience ID.',
+    );
+  }
+
+  await prisma.experience.delete({
+    where: { id },
+  });
+
+  revalidatePath('/admin');
+  revalidatePath('/');
+}

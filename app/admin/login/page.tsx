@@ -24,7 +24,7 @@ function AdminLoginForm() {
 
     useEffect(() => {
         const savedTheme = localStorage.getItem('portfolio-theme');
-        const nextTheme = savedTheme === 'light' ? 'light' : 'dark';
+        const nextTheme = savedTheme === 'dark' ? 'dark' : 'light';
         setTheme(nextTheme);
         document.documentElement.dataset.theme = nextTheme;
     }, []);
