@@ -23,6 +23,7 @@ export function PortfolioLanding({
   projectList: ProjectItem[];
 }) {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [showAllProjects, setShowAllProjects] = useState(false);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('portfolio-theme');
@@ -37,6 +38,8 @@ export function PortfolioLanding({
   }, [theme]);
 
   const isLight = theme === 'light';
+  const visibleProjects = showAllProjects ? projectList : projectList.slice(0, 3);
+  const hasMoreProjects = projectList.length > 3;
 
   const shellClass = isLight ? 'bg-slate-100 text-slate-900' : 'bg-slate-950 text-slate-50';
   const pillClass = isLight
@@ -184,7 +187,7 @@ export function PortfolioLanding({
           </div>
 
           <div className="grid gap-6 lg:grid-cols-3">
-            {projectList.map((project) => {
+            {visibleProjects.map((project) => {
               const tags = (project.tags ?? '').split(',').map((tag) => tag.trim()).filter(Boolean);
 
               return (
@@ -239,6 +242,18 @@ export function PortfolioLanding({
               );
             })}
           </div>
+
+          {hasMoreProjects ? (
+            <div className="mt-8 flex justify-center">
+              <button
+                type="button"
+                onClick={() => setShowAllProjects((current) => !current)}
+                className={`rounded-full border px-5 py-3 text-sm font-medium transition ${secondaryButton}`}
+              >
+                {showAllProjects ? 'Show less' : 'Show more'}
+              </button>
+            </div>
+          ) : null}
         </section>
 
         <section className={`mt-20 rounded-3xl border p-8 ${cardClass}`}>

@@ -130,7 +130,7 @@ function AdminLoginForm() {
             </div>
 
             {error ? (
-              <div className={`rounded-2xl border px-3 py-2 text-sm ${isLight ? 'border-red-200 bg-red-50 text-red-700' : 'border-slate-700/80 bg-slate-950/60 text-slate-200'}`}>
+              <div className={`rounded-2xl border px-3 py-2 text-sm ${isLight ? 'border-slate-200 bg-slate-100 text-slate-700' : 'border-slate-700/80 bg-slate-950/60 text-slate-200'}`}>
                 {error}
               </div>
             ) : null}

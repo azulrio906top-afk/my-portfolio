@@ -153,7 +153,7 @@ export function AdminDashboard({
                             const formData = new FormData(form);
                             void runAction(deleteSkillAction, formData, `${skill.name} deleted.`);
                           }}
-                          className={`${iconButtonClass} border-slate-700/80 bg-slate-900/60 text-rose-400 hover:bg-slate-800`}
+                          className={`${iconButtonClass} border-slate-700/80 bg-slate-900/60 text-slate-300 hover:bg-slate-800`}
                           aria-label={`Delete skill ${skill.name}`}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -253,7 +253,7 @@ export function AdminDashboard({
                             const formData = new FormData(form);
                             void runAction(deleteProjectAction, formData, `${project.title} deleted.`);
                           }}
-                          className={`${iconButtonClass} border-slate-700/80 bg-slate-900/60 text-rose-400 hover:bg-slate-800`}
+                          className={`${iconButtonClass} border-slate-700/80 bg-slate-900/60 text-slate-300 hover:bg-slate-800`}
                           aria-label={`Delete project ${project.title}`}
                         >
                           <Trash2 className="h-4 w-4" />
