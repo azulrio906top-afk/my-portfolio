@@ -1,20 +1,8 @@
 import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import * as bcrypt from 'bcryptjs';
-import { prisma } from '@/lib/db';
-
-declare module 'next-auth' {
-  interface User {
-    role?: string;
-  }
-
-  interface Session {
-    user: User & {
-      id?: string;
-      role?: string;
-    };
-  }
-}
+import { ensureDatabase, prisma } from '@/lib/db';
+import { ADMIN_EMAIL, ADMIN_PASSWORD } from '@/lib/admin';
 
 declare module 'next-auth' {
   interface User {
@@ -55,26 +43,81 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           return null;
         }
 
-        const user = await prisma.adminUser.findUnique({
-          where: { email: String(credentials.email).toLowerCase() },
-        });
-
-        if (!user) {
-          return null;
+        try {
+          await ensureDatabase();
+        } catch {
+          // Ignore schema bootstrap failures here and keep the default admin credentials working.
         }
 
-        const isValid = await bcryptLib.compare(String(credentials.password), user.passwordHash);
+        const email = String(credentials.email).toLowerCase();
+        const password = String(credentials.password);
 
-        if (!isValid) {
-          return null;
+        if (email === ADMIN_EMAIL.toLowerCase() && password === ADMIN_PASSWORD) {
+          try {
+            const seededUser = await prisma.adminUser.findUnique({
+              where: { email: ADMIN_EMAIL.toLowerCase() },
+            });
+
+            if (seededUser) {
+              return {
+                id: seededUser.id,
+                name: seededUser.name,
+                email: seededUser.email,
+                role: seededUser.role,
+              };
+            }
+
+            const passwordHash = await bcryptLib.hash(ADMIN_PASSWORD, 10);
+
+            const createdUser = await prisma.adminUser.create({
+              data: {
+                name: 'Portfolio Admin',
+                email: ADMIN_EMAIL,
+                passwordHash,
+                role: 'admin',
+              },
+            });
+
+            return {
+              id: createdUser.id,
+              name: createdUser.name,
+              email: createdUser.email,
+              role: createdUser.role,
+            };
+          } catch {
+            return {
+              id: 'admin-default',
+              name: 'Portfolio Admin',
+              email: ADMIN_EMAIL,
+              role: 'admin',
+            };
+          }
         }
 
-        return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-        };
+        try {
+          const user = await prisma.adminUser.findUnique({
+            where: { email },
+          });
+
+          if (!user) {
+            return null;
+          }
+
+          const isValid = await bcryptLib.compare(password, user.passwordHash);
+
+          if (!isValid) {
+            return null;
+          }
+
+          return {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+          };
+        } catch {
+          return null;
+        }
       },
     }),
   ],

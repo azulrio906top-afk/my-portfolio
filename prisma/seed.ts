@@ -1,5 +1,6 @@
 import * as PrismaClientModule from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
+import { ADMIN_EMAIL, ADMIN_NAME, ADMIN_PASSWORD } from '@/lib/admin';
 
 const bcryptLib = (bcrypt as typeof import('bcryptjs') & { default?: typeof import('bcryptjs') }).default ?? bcrypt;
 const PrismaClientCtor = (PrismaClientModule as any).PrismaClient as new (
@@ -9,8 +10,8 @@ const PrismaClientCtor = (PrismaClientModule as any).PrismaClient as new (
 const prisma = new PrismaClientCtor();
 
 async function main() {
-  const adminEmail = 'admin@portfolio.dev';
-  const adminPassword = 'admin123';
+  const adminEmail = ADMIN_EMAIL;
+  const adminPassword = ADMIN_PASSWORD;
 
   const existingAdmin = await prisma.adminUser.findUnique({
     where: { email: adminEmail },
@@ -21,7 +22,7 @@ async function main() {
 
     await prisma.adminUser.create({
       data: {
-        name: 'Portfolio Admin',
+        name: ADMIN_NAME,
         email: adminEmail,
         passwordHash,
         role: 'admin',
@@ -38,6 +39,8 @@ async function main() {
     { name: 'Node.js', category: 'Backend', order: 6 },
     { name: 'Tailwind CSS', category: 'Styling', order: 7 },
     { name: 'Framer Motion', category: 'UI/UX', order: 8 },
+    { name: 'Design Systems', category: 'Product', order: 9 },
+    { name: 'Analytics', category: 'Strategy', order: 10 },
   ];
 
   for (const skill of skills) {
@@ -52,9 +55,9 @@ async function main() {
     {
       title: 'Northstar Commerce',
       slug: 'northstar-commerce',
-      summary: 'B2B marketplace redesign for higher conversion and brand clarity.',
+      summary: 'B2B marketplace redesign focused on conversion, trust, and customer expansion.',
       description:
-        'A full storefront refresh for a B2B commerce brand, focused on search, trust signals, and scalable UI patterns.',
+        'Led the UX strategy and implementation for a complex commerce platform, improving category discovery, buyer confidence, and product information density for enterprise customers.',
       url: 'https://northstar.example',
       githubUrl: 'https://github.com/example/northstar-commerce',
       imageUrl: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f',
@@ -65,9 +68,9 @@ async function main() {
     {
       title: 'Pulse Analytics',
       slug: 'pulse-analytics',
-      summary: 'Executive dashboard for product and marketing performance insights.',
+      summary: 'Executive reporting suite for marketing and growth teams.',
       description:
-        'Built a data-rich dashboard with reusable charts, role-aware views, and a clean operational workflow.',
+        'Built a responsive analytics workspace with role-based views, interactive charts, and a simplified decision workflow so leadership teams could monitor performance in minutes.',
       url: 'https://pulse.example',
       githubUrl: 'https://github.com/example/pulse-analytics',
       imageUrl: 'https://images.unsplash.com/photo-1552664730-d307ca884978',
@@ -78,15 +81,28 @@ async function main() {
     {
       title: 'Luma Studio',
       slug: 'luma-studio',
-      summary: 'Modern portfolio site for a boutique creative studio.',
+      summary: 'Story-first portfolio site for a boutique creative brand.',
       description:
-        'Designed and built a storytelling-first portfolio with motion-rich interactions and a CMS-ready content model.',
+        'Designed and built a premium portfolio experience with motion, editorial layouts, and a clean CMS-driven content model to showcase flagship client work.',
       url: 'https://luma.example',
       githubUrl: 'https://github.com/example/luma-studio',
       imageUrl: 'https://images.unsplash.com/photo-1497366754035-f200968a6e72',
-      featured: false,
+      featured: true,
       status: 'active',
       tags: 'Portfolio, Design, CMS',
+    },
+    {
+      title: 'Atlas Ops',
+      slug: 'atlas-ops',
+      summary: 'Operations dashboard for sales teams and field managers.',
+      description:
+        'Created a streamlined internal portal for team visibility, task routing, and customer follow-up flows, reducing admin overhead and improving operational clarity.',
+      url: 'https://atlas.example',
+      githubUrl: 'https://github.com/example/atlas-ops',
+      imageUrl: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f',
+      featured: false,
+      status: 'active',
+      tags: 'Operations, Dashboard, Workflow',
     },
   ];
 

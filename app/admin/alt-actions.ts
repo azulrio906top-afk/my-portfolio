@@ -2,9 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { auth } from '@/auth';
-import { ensureDatabase, prisma } from '@/lib/db';
-
-const isoNow = () => new Date().toISOString();
+import { prisma } from '@/lib/db';
 
 async function requireAdmin() {
   const session = await auth();
@@ -12,11 +10,9 @@ async function requireAdmin() {
   if (!session?.user) {
     throw new Error('Unauthorized');
   }
-
-  await ensureDatabase();
 }
 
-export async function createSkill(formData: FormData) {
+export async function createSkillAlt(formData: FormData) {
   await requireAdmin();
 
   const name = String(formData.get('name') ?? '').trim();
@@ -32,8 +28,6 @@ export async function createSkill(formData: FormData) {
       name,
       category,
       order: Number.isFinite(order) ? order : 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
     },
   });
 
@@ -41,7 +35,7 @@ export async function createSkill(formData: FormData) {
   revalidatePath('/');
 }
 
-export async function updateSkill(formData: FormData) {
+export async function updateSkillAlt(formData: FormData) {
   await requireAdmin();
 
   const id = Number(formData.get('id'));
@@ -59,7 +53,6 @@ export async function updateSkill(formData: FormData) {
       name,
       category,
       order: Number.isFinite(order) ? order : 0,
-      updatedAt: new Date().toISOString(),
     },
   });
 
@@ -67,7 +60,7 @@ export async function updateSkill(formData: FormData) {
   revalidatePath('/');
 }
 
-export async function deleteSkill(formData: FormData) {
+export async function deleteSkillAlt(formData: FormData) {
   await requireAdmin();
 
   const id = Number(formData.get('id'));
@@ -82,7 +75,7 @@ export async function deleteSkill(formData: FormData) {
   revalidatePath('/');
 }
 
-export async function createProject(formData: FormData) {
+export async function createProjectAlt(formData: FormData) {
   await requireAdmin();
 
   const title = String(formData.get('title') ?? '').trim();
@@ -112,8 +105,6 @@ export async function createProject(formData: FormData) {
       tags,
       featured,
       status,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
     },
   });
 
@@ -121,7 +112,7 @@ export async function createProject(formData: FormData) {
   revalidatePath('/');
 }
 
-export async function updateProject(formData: FormData) {
+export async function updateProjectAlt(formData: FormData) {
   await requireAdmin();
 
   const id = Number(formData.get('id'));
@@ -153,7 +144,6 @@ export async function updateProject(formData: FormData) {
       tags,
       featured,
       status,
-      updatedAt: new Date().toISOString(),
     },
   });
 
@@ -161,7 +151,7 @@ export async function updateProject(formData: FormData) {
   revalidatePath('/');
 }
 
-export async function deleteProject(formData: FormData) {
+export async function deleteProjectAlt(formData: FormData) {
   await requireAdmin();
 
   const id = Number(formData.get('id'));

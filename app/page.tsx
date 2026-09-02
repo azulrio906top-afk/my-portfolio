@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/db';
+import { ensureDatabase, prisma } from '@/lib/db';
 import { PortfolioLanding } from '@/components/portfolio-landing';
 
 function isMissingTableError(error: unknown) {
@@ -60,6 +60,8 @@ const fallbackProjects: Array<{
 ];
 
 export default async function HomePage() {
+  await ensureDatabase();
+
   const loadSkills = async () => {
     try {
       return await prisma.skill.findMany({ orderBy: { order: 'asc' } });

@@ -3,10 +3,40 @@
 :root {
   --background: #020817;
   --foreground: #f8fafc;
+  --panel: rgba(15, 23, 42, 0.72);
+  --panel-soft: rgba(15, 23, 42, 0.56);
+  --panel-strong: #0f172a;
+  --surface: #0b1120;
+  --input: #0f172a;
+  --input-border: rgba(148, 163, 184, 0.24);
+  --button: rgba(15, 23, 42, 0.9);
+  --button-hover: rgba(30, 41, 59, 0.95);
+  --border: rgba(148, 163, 184, 0.2);
+  --muted: #cbd5e1;
+  --accent: #38bdf8;
+  --accent-strong: #7dd3fc;
 }
 
 html {
   scroll-behavior: smooth;
+  background: var(--background);
+}
+
+html[data-theme='light'] {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --panel: rgba(255, 255, 255, 0.9);
+  --panel-soft: rgba(248, 250, 252, 0.9);
+  --panel-strong: #ffffff;
+  --surface: #f8fafc;
+  --input: #ffffff;
+  --input-border: rgba(148, 163, 184, 0.45);
+  --button: #ffffff;
+  --button-hover: #f1f5f9;
+  --border: rgba(148, 163, 184, 0.38);
+  --muted: #475569;
+  --accent: #0284c7;
+  --accent-strong: #0ea5e9;
 }
 
 body {
@@ -14,6 +44,7 @@ body {
     var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
 * {
