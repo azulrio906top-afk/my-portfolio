@@ -31,96 +31,262 @@ async function main() {
   }
 
   const skills = [
-    { name: 'Next.js', category: 'Frontend', order: 1 },
-    { name: 'TypeScript', category: 'Frontend', order: 2 },
-    { name: 'React', category: 'Frontend', order: 3 },
-    { name: 'Prisma', category: 'Backend', order: 4 },
-    { name: 'SQLite', category: 'Database', order: 5 },
-    { name: 'Node.js', category: 'Backend', order: 6 },
-    { name: 'Tailwind CSS', category: 'Styling', order: 7 },
-    { name: 'Framer Motion', category: 'UI/UX', order: 8 },
-    { name: 'Design Systems', category: 'Product', order: 9 },
-    { name: 'Analytics', category: 'Strategy', order: 10 },
+    {
+      name: 'Next.js',
+      category: 'Frontend',
+      order: 1,
+    },
+    {
+      name: 'React',
+      category: 'Frontend',
+      order: 2,
+    },
+    {
+      name: 'TypeScript',
+      category: 'Frontend',
+      order: 3,
+    },
+    {
+      name: 'Tailwind CSS',
+      category: 'Frontend',
+      order: 4,
+    },
+    {
+      name: 'JavaScript',
+      category: 'Frontend',
+      order: 5,
+    },
+    {
+      name: 'Node.js',
+      category: 'Backend',
+      order: 6,
+    },
+    {
+      name: 'Express',
+      category: 'Backend',
+      order: 7,
+    },
+    {
+      name: 'Prisma',
+      category: 'Database',
+      order: 8,
+    },
+    {
+      name: 'SQLite',
+      category: 'Database',
+      order: 9,
+    },
+    {
+      name: 'PostgreSQL',
+      category: 'Database',
+      order: 10,
+    },
+    {
+      name: 'Zustand',
+      category: 'State Management',
+      order: 11,
+    },
+    {
+      name: 'REST API',
+      category: 'Backend',
+      order: 12,
+    },
+    {
+      name: 'Git',
+      category: 'Tools',
+      order: 13,
+    },
+    {
+      name: 'GitHub',
+      category: 'Tools',
+      order: 14,
+    },
+    {
+      name: 'Docker',
+      category: 'DevOps',
+      order: 15,
+    },
+    {
+      name: 'AI Integration',
+      category: 'AI',
+      order: 16,
+    },
+    {
+      name: 'UI/UX Design',
+      category: 'Design',
+      order: 17,
+    },
+    {
+      name: 'Design Systems',
+      category: 'Design',
+      order: 18,
+    },
   ];
 
   for (const skill of skills) {
     await prisma.skill.upsert({
-      where: { name: skill.name },
-      update: skill,
-      create: skill,
+      where: {
+        name: skill.name,
+      },
+      update: {
+        category: skill.category,
+        order: skill.order,
+        updatedAt: new Date(),
+      },
+      create: {
+        name: skill.name,
+        category: skill.category,
+        order: skill.order,
+      },
     });
   }
 
+  console.log(`✅ Seeded ${skills.length} skills`);
+
+  // --------------------------------------------------
+  // PROJECTS
+  // --------------------------------------------------
+
   const projects = [
-    {
-      title: 'Northstar Commerce',
-      slug: 'northstar-commerce',
-      summary: 'B2B marketplace redesign focused on conversion, trust, and customer expansion.',
-      description:
-        'Led the UX strategy and implementation for a complex commerce platform, improving category discovery, buyer confidence, and product information density for enterprise customers.',
-      url: 'https://northstar.example',
-      githubUrl: 'https://github.com/example/northstar-commerce',
-      imageUrl: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f',
-      featured: true,
-      status: 'active',
-      tags: 'Next.js, Commerce, UX',
-    },
-    {
-      title: 'Pulse Analytics',
-      slug: 'pulse-analytics',
-      summary: 'Executive reporting suite for marketing and growth teams.',
-      description:
-        'Built a responsive analytics workspace with role-based views, interactive charts, and a simplified decision workflow so leadership teams could monitor performance in minutes.',
-      url: 'https://pulse.example',
-      githubUrl: 'https://github.com/example/pulse-analytics',
-      imageUrl: 'https://images.unsplash.com/photo-1552664730-d307ca884978',
-      featured: true,
-      status: 'active',
-      tags: 'Dashboard, SaaS, Data',
-    },
     {
       title: 'Luma Studio',
       slug: 'luma-studio',
-      summary: 'Story-first portfolio site for a boutique creative brand.',
+      summary:
+        'Story-first portfolio site for a boutique creative brand.',
       description:
-        'Designed and built a premium portfolio experience with motion, editorial layouts, and a clean CMS-driven content model to showcase flagship client work.',
-      url: 'https://luma.example',
-      githubUrl: 'https://github.com/example/luma-studio',
-      imageUrl: 'https://images.unsplash.com/photo-1497366754035-f200968a6e72',
+        'A polished portfolio experience designed for a creative studio. The project focuses on strong visual presentation, responsive layouts, clear storytelling, and a simple content structure that makes the studio work easy for potential clients to explore.',
+      url: null,
+      githubUrl: null,
+      imageUrl:
+        'https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=1200&q=80',
       featured: true,
       status: 'active',
-      tags: 'Portfolio, Design, CMS',
+      tags: 'PORTFOLIO,DESIGN,CMS',
     },
+
     {
-      title: 'Atlas Ops',
-      slug: 'atlas-ops',
-      summary: 'Operations dashboard for sales teams and field managers.',
+      title: 'Pulse Analytics',
+      slug: 'pulse-analytics',
+      summary:
+        'Executive reporting suite for marketing and growth teams.',
       description:
-        'Created a streamlined internal portal for team visibility, task routing, and customer follow-up flows, reducing admin overhead and improving operational clarity.',
-      url: 'https://atlas.example',
-      githubUrl: 'https://github.com/example/atlas-ops',
-      imageUrl: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f',
+        'A business analytics dashboard focused on making marketing and growth data easier to understand. The interface brings important metrics, reports, and business insights into a clean dashboard experience designed for fast decision making.',
+      url: null,
+      githubUrl: null,
+      imageUrl:
+        'https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=1200&q=80',
+      featured: true,
+      status: 'active',
+      tags: 'DASHBOARD,SAAS,DATA',
+    },
+
+    {
+      title: 'Northstar Commerce',
+      slug: 'northstar-commerce',
+      summary:
+        'B2B marketplace redesign focused on conversion, trust, and customer expansion.',
+      description:
+        'A modern B2B commerce experience focused on improving usability and conversion. The project emphasizes clear product discovery, trustworthy presentation, responsive interfaces, and a scalable frontend architecture.',
+      url: null,
+      githubUrl: null,
+      imageUrl:
+        'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=1200&q=80',
+      featured: true,
+      status: 'active',
+      tags: 'NEXT.JS,COMMERCE,UX',
+    },
+
+    {
+      title: 'AI Portfolio Assistant',
+      slug: 'ai-portfolio-assistant',
+      summary:
+        'AI-powered assistant that helps potential clients understand a developer portfolio.',
+      description:
+        'An AI-powered portfolio assistant that answers questions about skills, projects, professional experience, and services. The assistant combines a Next.js interface, a server-side API route, Prisma, SQLite, and OpenAI to provide potential clients with a conversational way to learn about the developer.',
+      url: null,
+      githubUrl: null,
+      imageUrl:
+        'https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=1200&q=80',
+      featured: true,
+      status: 'active',
+      tags: 'AI,NEXT.JS,OPENAI,PRISMA',
+    },
+
+    {
+      title: 'Business Dashboard',
+      slug: 'business-dashboard',
+      summary:
+        'Responsive internal dashboard for business reporting and workflow management.',
+      description:
+        'A responsive business dashboard designed to organize reporting, operational information, and workflow data in one place. The interface prioritizes clarity, responsive behavior, and maintainable component architecture.',
+      url: null,
+      githubUrl: null,
+      imageUrl:
+        'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&q=80',
       featured: false,
       status: 'active',
-      tags: 'Operations, Dashboard, Workflow',
+      tags: 'REACT,DASHBOARD,ANALYTICS',
     },
   ];
 
   for (const project of projects) {
     await prisma.project.upsert({
-      where: { slug: project.slug },
-      update: project,
-      create: project,
+      where: {
+        slug: project.slug,
+      },
+      update: {
+        title: project.title,
+        summary: project.summary,
+        description: project.description,
+        url: project.url,
+        githubUrl: project.githubUrl,
+        imageUrl: project.imageUrl,
+        featured: project.featured,
+        status: project.status,
+        tags: project.tags,
+        updatedAt: new Date(),
+      },
+      create: {
+        title: project.title,
+        slug: project.slug,
+        summary: project.summary,
+        description: project.description,
+        url: project.url,
+        githubUrl: project.githubUrl,
+        imageUrl: project.imageUrl,
+        featured: project.featured,
+        status: project.status,
+        tags: project.tags,
+      },
     });
   }
+
+  console.log(`✅ Seeded ${projects.length} projects`);
+
+  // --------------------------------------------------
+  // SUMMARY
+  // --------------------------------------------------
+
+  const skillCount = await prisma.skill.count();
+  const projectCount = await prisma.project.count();
+  const adminCount = await prisma.adminUser.count();
+
+  console.log('');
+  console.log('================================');
+  console.log('🎉 DATABASE SEED COMPLETE');
+  console.log('================================');
+  console.log(`Skills:   ${skillCount}`);
+  console.log(`Projects: ${projectCount}`);
+  console.log(`Admins:   ${adminCount}`);
+  console.log('================================');
 }
 
 main()
-  .then(async () => {
-    await prisma.$disconnect();
-  })
-  .catch(async (error) => {
+  .catch((error) => {
+    console.error('❌ Seed failed:');
     console.error(error);
-    await prisma.$disconnect();
     process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
   });
