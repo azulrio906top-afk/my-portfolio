@@ -548,8 +548,8 @@ export function PortfolioLanding({
                         </a>
                     </div>
                 </section>
-                <PortfolioChatbot />
             </div>
+            <PortfolioChatbot />
         </main>
     );
 }
