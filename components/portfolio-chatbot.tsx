@@ -21,7 +21,7 @@ type Message = {
     content: string;
 };
 
-const CLYDE_IMAGE = "/chatbot/clyde.webp";
+const CLYDE_IMAGE = "/chatbot/bot.png";
 
 const suggestions = [
     "What are your main skills?",
