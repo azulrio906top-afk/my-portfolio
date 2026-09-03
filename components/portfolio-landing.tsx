@@ -1,11 +1,35 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Briefcase, Code2, ExternalLink, Mail, Moon, Sparkles, SunMedium } from 'lucide-react';
-import PortfolioChatbot from "@/components/portfolio-chatbot";
+import {
+    ArrowRight,
+    BriefcaseBusiness,
+    Check,
+    ChevronRight,
+    Code2,
+    Database,
+    ExternalLink,
+    // Github,
+    Layers3,
+    Mail,
+    Menu,
+    Moon,
+    Palette,
+    Server,
+    Sparkles,
+    SunMedium,
+    X,
+    Zap,
+} from 'lucide-react';
 
-type SkillItem = { id: number; name: string };
+import PortfolioChatbot from '@/components/portfolio-chatbot';
+
+type SkillItem = {
+    id: number;
+    name: string;
+};
+
 type ProjectItem = {
     id: number;
     title: string;
@@ -16,19 +40,59 @@ type ProjectItem = {
     tags?: string | null;
 };
 
+type PortfolioLandingProps = {
+    skillList: SkillItem[];
+    projectList: ProjectItem[];
+};
+
+const services = [
+    {
+        number: '01',
+        icon: Layers3,
+        title: 'Launch a new product',
+        text: 'Turn an idea into a polished, production-ready web application designed around real business goals.',
+    },
+    {
+        number: '02',
+        icon: Zap,
+        title: 'Modernize an existing app',
+        text: 'Improve performance, UX, architecture and maintainability without throwing away what already works.',
+    },
+    {
+        number: '03',
+        icon: Database,
+        title: 'Business dashboards',
+        text: 'Build powerful internal tools, reporting systems and workflow applications that make teams more productive.',
+    },
+    {
+        number: '04',
+        icon: Sparkles,
+        title: 'AI-powered experiences',
+        text: 'Add useful AI assistants, intelligent search, automation and AI-powered workflows to existing products.',
+    },
+];
+
+const fallbackSkillGroups = {
+    frontend: ['React', 'Next.js', 'TypeScript', 'Tailwind CSS'],
+    backend: ['Node.js', 'Express', 'REST APIs'],
+    data: ['PostgreSQL', 'MongoDB', 'Prisma', 'SQLite'],
+    ai: ['AI Integration', 'AI Assistants', 'Automation'],
+};
+
 export function PortfolioLanding({
     skillList,
     projectList,
-}: {
-    skillList: SkillItem[];
-    projectList: ProjectItem[];
-}) {
-    const [theme, setTheme] = useState<'dark' | 'light'>('light');
+}: PortfolioLandingProps) {
+    const [theme, setTheme] = useState<'light' | 'dark'>('light');
+    const [mobileMenu, setMobileMenu] = useState(false);
     const [showAllProjects, setShowAllProjects] = useState(false);
 
     useEffect(() => {
         const savedTheme = localStorage.getItem('portfolio-theme');
-        const nextTheme = savedTheme === 'dark' ? 'dark' : 'light';
+
+        const nextTheme =
+            savedTheme === 'dark' ? 'dark' : 'light';
+
         setTheme(nextTheme);
         document.documentElement.dataset.theme = nextTheme;
     }, []);
@@ -39,516 +103,1315 @@ export function PortfolioLanding({
     }, [theme]);
 
     const isLight = theme === 'light';
-    const visibleProjects = showAllProjects ? projectList : projectList.slice(0, 3);
-    const hasMoreProjects = projectList.length > 3;
 
-    const shellClass = isLight ? 'bg-slate-100 text-slate-900' : 'bg-slate-950 text-slate-50';
-    const pillClass = isLight
-        ? 'border-sky-200 bg-sky-100 text-sky-700'
-        : 'border-sky-400/40 bg-sky-500/10 text-sky-200';
-    const softSurface = isLight
-        ? 'border-slate-200 bg-white/80 shadow-slate-200/60'
-        : 'border-slate-800 bg-slate-900/70 shadow-sky-950/30';
-    const cardClass = isLight
-        ? 'border-slate-200 bg-white/80 text-slate-700'
-        : 'border-slate-800 bg-slate-900/70 text-slate-300';
-    const badgeClass = isLight
-        ? 'border-slate-200 bg-slate-100 text-slate-700'
-        : 'border-slate-700 bg-slate-950/60 text-slate-200';
+    const projects = useMemo(() => {
+        return [...projectList].sort((a, b) => {
+            const aFeatured =
+                a.status?.toLowerCase() === 'featured' ? 1 : 0;
+
+            const bFeatured =
+                b.status?.toLowerCase() === 'featured' ? 1 : 0;
+
+            return bFeatured - aFeatured;
+        });
+    }, [projectList]);
+
+    const visibleProjects = showAllProjects
+        ? projects
+        : projects.slice(0, 4);
+
+    const featuredProject = projects[0];
+
+    const remainingProjects = showAllProjects
+        ? projects.slice(1)
+        : projects.slice(1, 4);
+
+    const hasMoreProjects = projects.length > 4;
+
+    /*
+     * Try to intelligently organize the skills coming from Prisma.
+     * If a skill doesn't match a group, it goes into the frontend group
+     * rather than disappearing.
+     */
+    const groupedSkills = useMemo(() => {
+        if (!skillList.length) {
+            return fallbackSkillGroups;
+        }
+
+        const frontend: string[] = [];
+        const backend: string[] = [];
+        const data: string[] = [];
+        const ai: string[] = [];
+
+        skillList.forEach((skill) => {
+            const name = skill.name.toLowerCase();
+
+            if (
+                name.includes('react') ||
+                name.includes('next') ||
+                name.includes('typescript') ||
+                name.includes('javascript') ||
+                name.includes('tailwind') ||
+                name.includes('css') ||
+                name.includes('html') ||
+                name.includes('zustand') ||
+                name.includes('frontend')
+            ) {
+                frontend.push(skill.name);
+                return;
+            }
+
+            if (
+                name.includes('node') ||
+                name.includes('express') ||
+                name.includes('api') ||
+                name.includes('backend') ||
+                name.includes('rest')
+            ) {
+                backend.push(skill.name);
+                return;
+            }
+
+            if (
+                name.includes('postgres') ||
+                name.includes('mysql') ||
+                name.includes('sqlite') ||
+                name.includes('prisma') ||
+                name.includes('redis') ||
+                name.includes('database') ||
+                name.includes('sql')
+            ) {
+                data.push(skill.name);
+                return;
+            }
+
+            if (
+                name.includes('ai') ||
+                name.includes('openai') ||
+                name.includes('gemini') ||
+                name.includes('llm') ||
+                name.includes('machine learning') ||
+                name.includes('automation')
+            ) {
+                ai.push(skill.name);
+                return;
+            }
+
+            frontend.push(skill.name);
+        });
+
+        return {
+            frontend,
+            backend,
+            data,
+            ai,
+        };
+    }, [skillList]);
+
+    const pageClass = isLight
+        ? 'bg-[#f5f8fc] text-slate-950'
+        : 'bg-[#070b12] text-white';
+
+    const muted = isLight
+        ? 'text-slate-600'
+        : 'text-slate-400';
+
+    const heading = isLight
+        ? 'text-slate-950'
+        : 'text-white';
+
+    const panel = isLight
+        ? 'border-slate-200/80 bg-white'
+        : 'border-slate-800 bg-slate-900/70';
+
+    const softPanel = isLight
+        ? 'border-slate-200/80 bg-white/70'
+        : 'border-slate-800/80 bg-slate-900/40';
+
     const secondaryButton = isLight
         ? 'border-slate-300 bg-white text-slate-800 hover:border-slate-400 hover:bg-slate-50'
         : 'border-slate-700 bg-slate-900 text-slate-100 hover:border-slate-500 hover:bg-slate-800';
-    const mutedText = isLight ? 'text-slate-600' : 'text-slate-300';
-    const headingText = isLight ? 'text-slate-900' : 'text-white';
-    const subHeadingText = isLight ? 'text-slate-700' : 'text-slate-400';
-    const stats = [
-        {
-            value: `${projectList.length}+`,
-            label: "Projects shipped",
-        },
-        {
-            value: "6",
-            label: "Years building",
-        },
-        {
-            value: "30+",
-            label: "Happy clients",
-        },
-    ];
+
+    const tagClass = isLight
+        ? 'border-slate-200 bg-slate-50 text-slate-600'
+        : 'border-slate-700 bg-slate-950 text-slate-300';
 
     return (
-        <main className={`min-h-screen px-6 py-20 transition-colors duration-200 ${shellClass}`}>
-            <div className="mx-auto max-w-6xl">
-                <div className="mb-6 flex justify-end">
-                    <button
-                        type="button"
-                        onClick={() =>
-                            setTheme(
-                                isLight ? "dark" : "light",
-                            )
-                        }
-                        className={`
-                            group relative
-                            flex h-10 w-10
-                            items-center justify-center
-                            rounded-full
-                            border
-                            transition
-                            ${isLight
-                                ? "border-slate-200 bg-white hover:bg-slate-50"
-                                : "border-slate-800 bg-slate-900 hover:bg-slate-800"
-                            }
-                        `}
-                        aria-label="Toggle color theme"
-                    >
-                        {isLight ? (
-                            <Moon className="h-4 w-4 text-slate-700" />
-                        ) : (
-                            <SunMedium className="h-4 w-4 text-amber-400" />
-                        )}
-                    </button>
-                </div>
+        <main
+            className={`min-h-screen overflow-hidden transition-colors duration-300 ${pageClass}`}
+        >
+            {/* ------------------------------------------------------- */}
+            {/* BACKGROUND */}
+            {/* ------------------------------------------------------- */}
 
-                <motion.section
-                    initial={{ opacity: 0, y: 24 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5 }}
-                    className="grid items-center gap-10 lg:grid-cols-[1.3fr_0.7fr]"
+            <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+                <div
+                    className={`absolute left-[-15%] top-[-10%] h-[500px] w-[500px] rounded-full blur-3xl ${
+                        isLight
+                            ? 'bg-sky-200/40'
+                            : 'bg-sky-950/30'
+                    }`}
+                />
+
+                <div
+                    className={`absolute right-[-10%] top-[25%] h-[450px] w-[450px] rounded-full blur-3xl ${
+                        isLight
+                            ? 'bg-blue-100/40'
+                            : 'bg-blue-950/20'
+                    }`}
+                />
+
+                <div
+                    className={`absolute inset-0 ${
+                        isLight
+                            ? 'opacity-[0.25]'
+                            : 'opacity-[0.12]'
+                    }`}
+                    style={{
+                        backgroundImage:
+                            'linear-gradient(rgba(100,116,139,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(100,116,139,0.12) 1px, transparent 1px)',
+                        backgroundSize: '48px 48px',
+                        maskImage:
+                            'linear-gradient(to bottom, black, transparent 75%)',
+                    }}
+                />
+            </div>
+
+            {/* ------------------------------------------------------- */}
+            {/* NAVIGATION */}
+            {/* ------------------------------------------------------- */}
+
+            <header className="sticky top-0 z-50">
+                <div
+                    className={`border-b backdrop-blur-xl ${
+                        isLight
+                            ? 'border-slate-200/70 bg-white/70'
+                            : 'border-slate-800/70 bg-slate-950/70'
+                    }`}
                 >
-                    <div>
-                        <div className={`mb-6 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm ${pillClass}`}>
-                            <Sparkles className="h-4 w-4" />
-                            Available for selected freelance work
-                        </div>
-
-                        <h1
-                            className={`
-                                max-w-4xl
-                                text-5xl
-                                font-black
-                                leading-[0.95]
-                                tracking-[-0.04em]
-                                sm:text-6xl
-                                lg:text-7xl
-                                ${headingText}
-                            `}
+                    <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
+                        <a
+                            href="#top"
+                            className="group flex items-center gap-3"
                         >
-                            I build digital products
-                            <span className="text-sky-500">
-                                {" "}people actually want
-                            </span>{" "}
-                            to use.
-                        </h1>
-                        {/* <h1 className={`max-w-xl text-5xl font-black tracking-tight sm:text-6xl ${headingText}`}>
-                            I build product experiences that help brands sell more and feel more human.
-                        </h1> */}
+                            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-sky-500 text-white shadow-lg shadow-sky-500/20 transition group-hover:scale-105">
+                                <Code2 className="h-5 w-5" />
+                            </div>
 
-                        <p
-                            className={`
-                                mt-7
-                                max-w-2xl
-                                text-base
-                                leading-7
-                                sm:text-lg
-                                ${mutedText}
-                            `}
-                        >
-                            Full-stack developer and product designer
-                            helping ambitious businesses turn ideas into
-                            fast, elegant and measurable digital products.
-                        </p>
+                            <div>
+                                <p
+                                    className={`text-sm font-black tracking-tight ${heading}`}
+                                >
+                                    FLUNCO RUIZ
+                                </p>
 
-                        {/* <p className={`mt-6 max-w-xl text-lg ${mutedText}`}>
-                            I’m a product designer and full-stack developer helping startups and growing businesses create conversion-focused websites, dashboards, and digital experiences that are fast, elegant, and measurable.
-                        </p> */}
+                                <p
+                                    className={`text-[10px] uppercase tracking-[0.2em] ${muted}`}
+                                >
+                                    Developer / Designer
+                                </p>
+                            </div>
+                        </a>
 
-                        <div className="mt-8 flex flex-wrap items-center gap-4">
-                            <a
-                                href="#contact"
-                                className="inline-flex items-center gap-2 rounded-full bg-sky-500 px-5 py-3 font-medium text-slate-950 transition hover:bg-sky-400"
-                            >
-                                Let&apos;s talk...
-                                <ArrowRight className="h-4 w-4" />
-                            </a>
+                        <nav className="hidden items-center gap-8 md:flex">
                             <a
                                 href="#work"
-                                className={`rounded-full border px-5 py-3 font-medium transition ${secondaryButton}`}
+                                className={`text-sm font-medium transition hover:text-sky-500 ${muted}`}
                             >
-                                View work
+                                Work
                             </a>
+
+                            <a
+                                href="#services"
+                                className={`text-sm font-medium transition hover:text-sky-500 ${muted}`}
+                            >
+                                Services
+                            </a>
+
+                            <a
+                                href="#stack"
+                                className={`text-sm font-medium transition hover:text-sky-500 ${muted}`}
+                            >
+                                Stack
+                            </a>
+
+                            <a
+                                href="#contact"
+                                className={`text-sm font-medium transition hover:text-sky-500 ${muted}`}
+                            >
+                                Contact
+                            </a>
+                        </nav>
+
+                        <div className="flex items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    setTheme(
+                                        isLight
+                                            ? 'dark'
+                                            : 'light',
+                                    )
+                                }
+                                className={`flex h-10 w-10 items-center justify-center rounded-full border transition ${secondaryButton}`}
+                                aria-label="Toggle color theme"
+                            >
+                                {isLight ? (
+                                    <Moon className="h-4 w-4" />
+                                ) : (
+                                    <SunMedium className="h-4 w-4 text-amber-400" />
+                                )}
+                            </button>
+
                             <a
                                 href="/admin"
-                                className="rounded-full border border-sky-500/40 bg-sky-500/10 px-5 py-3 font-medium text-sky-600 transition hover:border-sky-400 hover:bg-sky-500/15"
+                                className="hidden rounded-full bg-sky-500 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-sky-400 sm:block"
                             >
                                 Admin
                             </a>
+
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    setMobileMenu(
+                                        (current) => !current,
+                                    )
+                                }
+                                className={`flex h-10 w-10 items-center justify-center rounded-full border md:hidden ${secondaryButton}`}
+                                aria-label="Toggle menu"
+                            >
+                                {mobileMenu ? (
+                                    <X className="h-5 w-5" />
+                                ) : (
+                                    <Menu className="h-5 w-5" />
+                                )}
+                            </button>
                         </div>
                     </div>
 
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.5, delay: 0.1 }}
-                        className={`rounded-3xl border p-6 shadow-2xl ${softSurface}`}
-                    >
+                    {mobileMenu && (
                         <div
-                            className={`
-                                relative
-                                overflow-hidden
-                                rounded-[28px]
-                                border
-                                p-7
-                                shadow-2xl
-                                ${softSurface}
-                            `}
+                            className={`border-t px-6 py-5 md:hidden ${
+                                isLight
+                                    ? 'border-slate-200 bg-white'
+                                    : 'border-slate-800 bg-slate-950'
+                            }`}
+                        >
+                            <div className="mx-auto flex max-w-7xl flex-col gap-4">
+                                {[
+                                    ['Work', '#work'],
+                                    ['Services', '#services'],
+                                    ['Stack', '#stack'],
+                                    ['Contact', '#contact'],
+                                ].map(([label, href]) => (
+                                    <a
+                                        key={href}
+                                        href={href}
+                                        onClick={() =>
+                                            setMobileMenu(false)
+                                        }
+                                        className={`text-sm font-medium ${muted}`}
+                                    >
+                                        {label}
+                                    </a>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </header>
+
+            {/* ------------------------------------------------------- */}
+            {/* HERO */}
+            {/* ------------------------------------------------------- */}
+
+            <section id="top" className="relative">
+                <div className="mx-auto max-w-7xl px-6 pb-24 pt-20 lg:pb-32 lg:pt-28">
+                    <div className="grid items-center gap-16 lg:grid-cols-[1.25fr_0.75fr]">
+                        <motion.div
+                            initial={{
+                                opacity: 0,
+                                y: 30,
+                            }}
+                            animate={{
+                                opacity: 1,
+                                y: 0,
+                            }}
+                            transition={{
+                                duration: 0.7,
+                            }}
                         >
                             <div
-                                className="
-                                    absolute
-                                    -right-20
-                                    -top-20
-                                    h-48
-                                    w-48
-                                    rounded-full
-                                    bg-sky-400/10
-                                    blur-3xl
-                                "
+                                className={`mb-7 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium ${
+                                    isLight
+                                        ? 'border-sky-200 bg-sky-50 text-sky-700'
+                                        : 'border-sky-400/30 bg-sky-500/10 text-sky-300'
+                                }`}
+                            >
+                                <span className="relative flex h-2 w-2">
+                                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                                    <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                                </span>
+
+                                Available for selected freelance work
+                            </div>
+
+                            <h1
+                                className={`max-w-5xl text-5xl font-black leading-[0.94] tracking-[-0.055em] sm:text-6xl lg:text-[82px] ${heading}`}
+                            >
+                                I build digital products
+                                <span className="text-sky-500">
+                                    {' '}
+                                    that move businesses forward.
+                                </span>
+                            </h1>
+
+                            <p
+                                className={`mt-8 max-w-2xl text-base leading-7 sm:text-lg ${muted}`}
+                            >
+                                Full-stack developer and product
+                                designer helping startups and growing
+                                businesses turn ideas into fast,
+                                elegant and production-ready software.
+                            </p>
+
+                            <div className="mt-9 flex flex-wrap gap-3">
+                                <a
+                                    href="#contact"
+                                    className="group inline-flex items-center gap-2 rounded-full bg-sky-500 px-6 py-3.5 text-sm font-bold text-slate-950 shadow-xl shadow-sky-500/20 transition hover:-translate-y-0.5 hover:bg-sky-400"
+                                >
+                                    Start a project
+                                    <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
+                                </a>
+
+                                <a
+                                    href="#work"
+                                    className={`inline-flex items-center gap-2 rounded-full border px-6 py-3.5 text-sm font-semibold transition hover:-translate-y-0.5 ${secondaryButton}`}
+                                >
+                                    View selected work
+                                    <ChevronRight className="h-4 w-4" />
+                                </a>
+                            </div>
+
+                            <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3">
+                                {[
+                                    'Full-stack development',
+                                    'Product design',
+                                    'AI integration',
+                                ].map((item) => (
+                                    <div
+                                        key={item}
+                                        className={`flex items-center gap-2 text-xs ${muted}`}
+                                    >
+                                        <Check className="h-3.5 w-3.5 text-emerald-500" />
+                                        {item}
+                                    </div>
+                                ))}
+                            </div>
+                        </motion.div>
+
+                        {/* HERO VISUAL */}
+                        <motion.div
+                            initial={{
+                                opacity: 0,
+                                scale: 0.94,
+                            }}
+                            animate={{
+                                opacity: 1,
+                                scale: 1,
+                            }}
+                            transition={{
+                                duration: 0.7,
+                                delay: 0.15,
+                            }}
+                            className="relative"
+                        >
+                            <div
+                                className={`absolute -inset-6 rounded-[40px] bg-sky-500/10 blur-3xl`}
                             />
 
-                            <div className="relative">
-                                <div className="flex items-start justify-between">
-                                    <div>
-                                        <p
-                                            className={`
-                                                text-xs
-                                                uppercase
-                                                tracking-[0.2em]
-                                                ${subHeadingText}
-                                            `}
-                                        >
-                                            Developer / Designer
-                                        </p>
-
-                                        <h2
-                                            className={`
-                                                mt-2
-                                                text-3xl
-                                                font-black
-                                                tracking-tight
-                                                ${headingText}
-                                            `}
-                                        >
-                                            Flunco Ruiz
-                                        </h2>
-                                    </div>
-
-                                    <div
-                                        className="
-                                            flex h-12 w-12
-                                            items-center justify-center
-                                            rounded-2xl
-                                            bg-sky-500
-                                            text-white
-                                            shadow-lg
-                                            shadow-sky-500/20
-                                        "
-                                    >
-                                        <Code2 className="h-5 w-5" />
-                                    </div>
-                                </div>
-
+                            <div
+                                className={`relative overflow-hidden rounded-[32px] border p-2 shadow-2xl ${
+                                    isLight
+                                        ? 'border-slate-200 bg-white'
+                                        : 'border-slate-800 bg-slate-900'
+                                }`}
+                            >
                                 <div
-                                    className="
-                                        mt-8
-                                        flex items-center gap-3
-                                        rounded-2xl
-                                        border border-emerald-200
-                                        bg-emerald-50
-                                        px-4 py-3
-                                        text-sm
-                                        text-emerald-700
-                                    "
+                                    className={`relative overflow-hidden rounded-[26px] p-8 sm:p-10 ${
+                                        isLight
+                                            ? 'bg-slate-950 text-white'
+                                            : 'bg-slate-950 text-white'
+                                    }`}
                                 >
-                                    <span
-                                        className="
-                                            h-2
-                                            w-2
-                                            rounded-full
-                                            bg-emerald-500
-                                        "
-                                    />
+                                    <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-sky-500/20 blur-3xl" />
 
-                                    Available for selected projects
-                                </div>
+                                    <div className="relative">
+                                        <div className="flex items-start justify-between">
+                                            <div>
+                                                <p className="text-[10px] uppercase tracking-[0.25em] text-slate-500">
+                                                    Digital product
+                                                    builder
+                                                </p>
 
-                                <div className="mt-6 space-y-3">
-                                    <div
-                                        className={`
-                                            rounded-2xl
-                                            border
-                                            p-4
-                                            ${badgeClass}
-                                        `}
-                                    >
-                                        <p className="text-xs text-slate-400">
-                                            SPECIALIZATION
-                                        </p>
+                                                <h2 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">
+                                                    Flunco
+                                                    <span className="text-sky-400">
+                                                        .
+                                                    </span>
+                                                </h2>
+                                            </div>
 
-                                        <p
-                                            className={`
-                                                mt-1
-                                                font-semibold
-                                                ${headingText}
-                                            `}
-                                        >
-                                            Full Stack Development
-                                        </p>
-                                    </div>
+                                            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-500 shadow-lg shadow-sky-500/20">
+                                                <Code2 className="h-5 w-5 text-white" />
+                                            </div>
+                                        </div>
 
-                                    <div
-                                        className={`
-                                            rounded-2xl
-                                            border
-                                            p-4
-                                            ${badgeClass}
-                                        `}
-                                    >
-                                        <p className="text-xs text-slate-400">
-                                            FOCUS
-                                        </p>
+                                        <div className="mt-12">
+                                            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+                                                Focus
+                                            </p>
 
-                                        <p
-                                            className={`
-                                                mt-1
-                                                font-semibold
-                                                ${headingText}
-                                            `}
-                                        >
-                                            Products · SaaS · Dashboards
-                                        </p>
+                                            <p className="mt-3 text-2xl font-bold leading-tight">
+                                                Products
+                                                <br />
+                                                SaaS
+                                                <br />
+                                                Dashboards
+                                            </p>
+                                        </div>
+
+                                        <div className="mt-10 grid grid-cols-2 gap-3">
+                                            <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                                                <Code2 className="h-4 w-4 text-sky-400" />
+
+                                                <p className="mt-3 text-xs text-slate-400">
+                                                    Engineering
+                                                </p>
+
+                                                <p className="mt-1 text-sm font-semibold">
+                                                    Full Stack
+                                                </p>
+                                            </div>
+
+                                            <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                                                <Palette className="h-4 w-4 text-sky-400" />
+
+                                                <p className="mt-3 text-xs text-slate-400">
+                                                    Experience
+                                                </p>
+
+                                                <p className="mt-1 text-sm font-semibold">
+                                                    Product Design
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-3 flex items-center gap-2 rounded-2xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 text-xs text-emerald-300">
+                                            <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                                            Available for selected projects
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </motion.div>
-                </motion.section>
-
-                <section className="mt-20 grid gap-6 sm:grid-cols-3">
-                    {stats.map((stat) => (
-                        <motion.div
-                            key={stat.label}
-                            initial={{ opacity: 0, y: 12 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.1 }}
-                            className={`rounded-2xl border p-6 ${cardClass}`}
-                        >
-                            <p className={`text-3xl font-black ${headingText}`}>{stat.value}</p>
-                            <p className={`mt-2 text-sm ${subHeadingText}`}>{stat.label}</p>
                         </motion.div>
-                    ))}
-                </section>
-
-                <section id="work" className="mt-20">
-                    <div className="mb-8 flex items-end justify-between gap-4">
-                        <div>
-                            <p className="text-sm uppercase tracking-[0.2em] text-sky-300">Selected work</p>
-                            <h2 className={`mt-2 text-3xl font-bold ${headingText}`}>Recent launches</h2>
-                        </div>
-                        <a href="#contact" className="text-sm text-sky-500 underline-offset-4 hover:underline">
-                            Start a project
-                        </a>
                     </div>
 
-                    <div className="grid gap-6 lg:grid-cols-3">
-                        {visibleProjects.map((project) => {
-                            const tags = (project.tags ?? '').split(',').map((tag) => tag.trim()).filter(Boolean);
+                    {/* HERO STATS */}
 
-                            return (
-                                <motion.article
-                                    key={project.id}
-                                    initial={{ opacity: 0, y: 18 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className={`overflow-hidden rounded-3xl border ${cardClass}`}
-                                >
-                                    <div
-                                        className="h-52 bg-cover bg-center"
-                                        style={{ backgroundImage: `url(${project.imageUrl ?? '/placeholder.svg'})` }}
-                                    />
-                                    <div className="p-5">
-                                        <div className="mb-3 flex items-center justify-between gap-3">
-                                            <h3 className={`text-xl font-semibold ${headingText}`}>{project.title}</h3>
-                                            <span className={`rounded-full border px-2 py-1 text-[10px] uppercase tracking-[0.2em] ${isLight ? 'border-slate-200 bg-slate-100 text-slate-600' : 'border-slate-700 bg-slate-950 text-slate-300'
-                                                }`}>
-                                                {project.status}
-                                            </span>
-                                        </div>
-                                        <p className={`text-sm ${mutedText}`}>{project.summary}</p>
-                                        <div className="mt-4 flex flex-wrap gap-2">
-                                            {tags.length > 0 ? (
-                                                tags.map((tag) => (
-                                                    <span key={tag} className={`rounded-full px-2.5 py-1 text-[10px] uppercase tracking-[0.16em] ${isLight ? 'bg-slate-100 text-slate-700' : 'bg-slate-800 text-slate-300'
-                                                        }`}>
-                                                        {tag}
-                                                    </span>
-                                                ))
-                                            ) : (
-                                                <span className={`rounded-full px-2.5 py-1 text-[10px] uppercase tracking-[0.16em] ${isLight ? 'bg-slate-100 text-slate-700' : 'bg-slate-800 text-slate-300'
-                                                    }`}>
-                                                    Portfolio
-                                                </span>
-                                            )}
-                                        </div>
-                                        <a
-                                            href={project.url ?? '#'}
-                                            className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-sky-500 hover:text-sky-600"
-                                            target="_blank"
-                                            rel="noreferrer"
-                                        >
-                                            Visit project
-                                            <ExternalLink className="h-4 w-4" />
-                                        </a>
-                                    </div>
-                                </motion.article>
-                            );
-                        })}
-                    </div>
-
-                    {hasMoreProjects ? (
-                        <div className="mt-8 flex justify-center">
-                            <button
-                                type="button"
-                                onClick={() => setShowAllProjects((current) => !current)}
-                                className={`rounded-full border px-5 py-3 text-sm font-medium transition ${secondaryButton}`}
-                            >
-                                {showAllProjects ? 'Show less' : 'Show more'}
-                            </button>
-                        </div>
-                    ) : null}
-                </section>
-
-                <section className={`mt-20 rounded-3xl border p-8 ${cardClass}`}>
-                    <p className="text-sm uppercase tracking-[0.2em] text-sky-300">Core stack</p>
-                    <div className="mt-6 flex flex-wrap gap-3">
-                        {skillList.map((skill) => (
-                            <span
-                                key={skill.id}
-                                className={`rounded-full border px-4 py-2 text-sm ${isLight ? 'border-slate-200 bg-slate-100 text-slate-700' : 'border-slate-700 bg-slate-950 text-slate-200'
-                                    }`}
-                            >
-                                {skill.name}
-                            </span>
-                        ))}
-                    </div>
-                </section>
-
-                <section className="mt-24">
-                    <div className="max-w-2xl">
-                        <p className="text-xs uppercase tracking-[0.25em] text-sky-500">
-                            What I do
-                        </p>
-
-                        <h2
-                            className={`
-                                mt-3
-                                text-4xl
-                                font-black
-                                tracking-tight
-                                ${headingText}
-                            `}
-                        >
-                            From idea to
-                            production.
-                        </h2>
-
-                        <p
-                            className={`
-                                mt-4
-                                leading-7
-                                ${mutedText}
-                            `}
-                        >
-                            I help businesses design, build and improve
-                            digital products that are useful, fast and
-                            easy to maintain.
-                        </p>
-                    </div>
-
-                    <div className="mt-10 grid gap-4 sm:grid-cols-2">
+                    <div className="mt-20 grid gap-4 sm:grid-cols-3">
                         {[
                             {
-                                number: "01",
-                                title: "Build a new product",
-                                text: "Turn an idea into a polished, production-ready web application.",
+                                value: `${projectList.length}+`,
+                                label: 'Projects shipped',
                             },
                             {
-                                number: "02",
-                                title: "Modernize an existing app",
-                                text: "Improve performance, UX, architecture and maintainability.",
+                                value: '6+',
+                                label: 'Years building',
                             },
                             {
-                                number: "03",
-                                title: "Business dashboards",
-                                text: "Create internal tools, reporting systems and workflow applications.",
+                                value: '30+',
+                                label: 'Happy clients',
                             },
-                            {
-                                number: "04",
-                                title: "AI-powered experiences",
-                                text: "Add useful AI assistants, automation and intelligent search.",
-                            },
-                        ].map((item) => (
-                            <article
-                                key={item.number}
-                                className={`
-                                    rounded-[24px]
-                                    border
-                                    p-6
-                                    transition
-                                    hover:-translate-y-1
-                                    ${cardClass}
-                                `}
+                        ].map((stat, index) => (
+                            <motion.div
+                                key={stat.label}
+                                initial={{
+                                    opacity: 0,
+                                    y: 15,
+                                }}
+                                animate={{
+                                    opacity: 1,
+                                    y: 0,
+                                }}
+                                transition={{
+                                    delay: 0.3 + index * 0.1,
+                                }}
+                                className={`rounded-2xl border p-6 ${panel}`}
                             >
-                                <span className="text-xs font-bold text-sky-500">
-                                    {item.number}
-                                </span>
-
-                                <h3
-                                    className={`
-                                        mt-6
-                                        text-xl
-                                        font-bold
-                                        ${headingText}
-                                    `}
+                                <p
+                                    className={`text-3xl font-black tracking-tight ${heading}`}
                                 >
-                                    {item.title}
-                                </h3>
+                                    {stat.value}
+                                </p>
 
                                 <p
-                                    className={`
-                                        mt-3
-                                        text-sm
-                                        leading-6
-                                        ${mutedText}
-                                    `}
+                                    className={`mt-2 text-xs uppercase tracking-[0.15em] ${muted}`}
                                 >
-                                    {item.text}
+                                    {stat.label}
                                 </p>
-                            </article>
+                            </motion.div>
                         ))}
                     </div>
-                </section>
-                <section id="contact" className="mt-20 pb-10">
-                    <div className="rounded-3xl border border-sky-500/30 bg-sky-500/10 p-8 text-center">
-                        <p className="text-sm uppercase tracking-[0.2em] text-sky-600">Contact</p>
-                        <h3 className={`mt-3 text-3xl font-bold ${headingText}`}>Let&apos;s build something remarkable.</h3>
-                        <a
-                            href="mailto:azulrio906top@gmail.com"
-                            className="mt-6 inline-flex items-center gap-2 rounded-full bg-slate-900 px-5 py-3 font-medium text-white transition hover:bg-slate-700"
+                </div>
+            </section>
+
+            {/* ------------------------------------------------------- */}
+            {/* WORK */}
+            {/* ------------------------------------------------------- */}
+
+            <section
+                id="work"
+                className="scroll-mt-24 border-t border-slate-200/60 dark:border-slate-800/60"
+            >
+                <div className="mx-auto max-w-7xl px-6 py-24">
+                    <div className="mb-12 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+                        <div>
+                            <p className="text-xs font-bold uppercase tracking-[0.25em] text-sky-500">
+                                Selected work
+                            </p>
+
+                            <h2
+                                className={`mt-3 text-4xl font-black tracking-tight sm:text-5xl ${heading}`}
+                            >
+                                Work that solves
+                                <br />
+                                real problems.
+                            </h2>
+                        </div>
+
+                        <p
+                            className={`max-w-md text-sm leading-6 ${muted}`}
                         >
-                            azulrio906top@gmail.com
+                            A selection of digital products,
+                            applications and experiences built with
+                            performance, usability and business value
+                            in mind.
+                        </p>
+                    </div>
+
+                    {featuredProject ? (
+                        <motion.article
+                            initial={{
+                                opacity: 0,
+                                y: 25,
+                            }}
+                            whileInView={{
+                                opacity: 1,
+                                y: 0,
+                            }}
+                            viewport={{
+                                once: true,
+                                amount: 0.15,
+                            }}
+                            transition={{
+                                duration: 0.6,
+                            }}
+                            className={`overflow-hidden rounded-[32px] border ${panel}`}
+                        >
+                            <div className="grid lg:grid-cols-[1.25fr_0.75fr]">
+                                <div
+                                    className={`relative min-h-[360px] overflow-hidden ${
+                                        isLight
+                                            ? 'bg-slate-200'
+                                            : 'bg-slate-800'
+                                    }`}
+                                >
+                                    {featuredProject.imageUrl ? (
+                                        <img
+                                            src={
+                                                featuredProject.imageUrl
+                                            }
+                                            alt={
+                                                featuredProject.title
+                                            }
+                                            className="absolute inset-0 h-full w-full object-cover transition duration-700 hover:scale-105"
+                                        />
+                                    ) : (
+                                        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-sky-500/20 via-slate-900 to-slate-950">
+                                            <Code2 className="h-20 w-20 text-sky-400/50" />
+                                        </div>
+                                    )}
+
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+
+                                    <div className="absolute bottom-6 left-6">
+                                        <span className="rounded-full border border-white/20 bg-black/40 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-white backdrop-blur-md">
+                                            Featured project
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-col justify-between p-7 sm:p-9">
+                                    <div>
+                                        <div className="flex items-center justify-between gap-4">
+                                            <span className="text-xs font-bold uppercase tracking-[0.2em] text-sky-500">
+                                                01
+                                            </span>
+
+                                            <span
+                                                className={`rounded-full border px-2.5 py-1 text-[10px] uppercase tracking-[0.15em] ${tagClass}`}
+                                            >
+                                                {
+                                                    featuredProject.status
+                                                }
+                                            </span>
+                                        </div>
+
+                                        <h3
+                                            className={`mt-7 text-3xl font-black tracking-tight ${heading}`}
+                                        >
+                                            {
+                                                featuredProject.title
+                                            }
+                                        </h3>
+
+                                        <p
+                                            className={`mt-4 text-sm leading-7 ${muted}`}
+                                        >
+                                            {
+                                                featuredProject.summary
+                                            }
+                                        </p>
+
+                                        <div className="mt-6 flex flex-wrap gap-2">
+                                            {(featuredProject.tags ??
+                                                '')
+                                                .split(',')
+                                                .map((tag) =>
+                                                    tag.trim(),
+                                                )
+                                                .filter(Boolean)
+                                                .map((tag) => (
+                                                    <span
+                                                        key={tag}
+                                                        className={`rounded-full border px-3 py-1.5 text-[10px] font-medium ${tagClass}`}
+                                                    >
+                                                        {tag}
+                                                    </span>
+                                                ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-10 flex flex-wrap gap-3">
+                                        {featuredProject.url ? (
+                                            <a
+                                                href={
+                                                    featuredProject.url
+                                                }
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="inline-flex items-center gap-2 rounded-full bg-sky-500 px-5 py-3 text-sm font-bold text-slate-950 transition hover:bg-sky-400"
+                                            >
+                                                View project
+                                                <ExternalLink className="h-4 w-4" />
+                                            </a>
+                                        ) : null}
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.article>
+                    ) : (
+                        <div
+                            className={`rounded-[32px] border border-dashed p-12 text-center ${panel}`}
+                        >
+                            <BriefcaseBusiness className="mx-auto h-8 w-8 text-sky-500" />
+
+                            <p
+                                className={`mt-4 font-semibold ${heading}`}
+                            >
+                                Projects are coming soon.
+                            </p>
+
+                            <p className={`mt-2 text-sm ${muted}`}>
+                                Add projects from the admin dashboard.
+                            </p>
+                        </div>
+                    )}
+
+                    {remainingProjects.length > 0 && (
+                        <div className="mt-6 grid gap-6 md:grid-cols-3">
+                            {remainingProjects.map(
+                                (project, index) => {
+                                    const tags = (
+                                        project.tags ?? ''
+                                    )
+                                        .split(',')
+                                        .map((tag) =>
+                                            tag.trim(),
+                                        )
+                                        .filter(Boolean);
+
+                                    return (
+                                        <motion.article
+                                            key={project.id}
+                                            initial={{
+                                                opacity: 0,
+                                                y: 20,
+                                            }}
+                                            whileInView={{
+                                                opacity: 1,
+                                                y: 0,
+                                            }}
+                                            viewport={{
+                                                once: true,
+                                                amount: 0.1,
+                                            }}
+                                            transition={{
+                                                duration: 0.5,
+                                                delay:
+                                                    index * 0.08,
+                                            }}
+                                            className={`group overflow-hidden rounded-3xl border transition duration-300 hover:-translate-y-1 hover:shadow-xl ${
+                                                isLight
+                                                    ? 'border-slate-200 bg-white hover:shadow-slate-200'
+                                                    : 'border-slate-800 bg-slate-900/70 hover:shadow-black/30'
+                                            }`}
+                                        >
+                                            <div
+                                                className={`relative h-52 overflow-hidden ${
+                                                    isLight
+                                                        ? 'bg-slate-100'
+                                                        : 'bg-slate-800'
+                                                }`}
+                                            >
+                                                {project.imageUrl ? (
+                                                    <img
+                                                        src={
+                                                            project.imageUrl
+                                                        }
+                                                        alt={
+                                                            project.title
+                                                        }
+                                                        className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
+                                                    />
+                                                ) : (
+                                                    <div className="flex h-full items-center justify-center bg-gradient-to-br from-sky-500/20 to-slate-900">
+                                                        <Code2 className="h-12 w-12 text-sky-400/50" />
+                                                    </div>
+                                                )}
+
+                                                <div className="absolute left-4 top-4">
+                                                    <span className="rounded-full border border-white/20 bg-black/40 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.15em] text-white backdrop-blur-md">
+                                                        {
+                                                            project.status
+                                                        }
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            <div className="p-5">
+                                                <div className="flex items-start justify-between gap-4">
+                                                    <div>
+                                                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-sky-500">
+                                                            {String(
+                                                                index +
+                                                                    2,
+                                                            ).padStart(
+                                                                2,
+                                                                '0',
+                                                            )}
+                                                        </p>
+
+                                                        <h3
+                                                            className={`mt-2 text-xl font-bold ${heading}`}
+                                                        >
+                                                            {
+                                                                project.title
+                                                            }
+                                                        </h3>
+                                                    </div>
+                                                </div>
+
+                                                <p
+                                                    className={`mt-3 line-clamp-3 text-sm leading-6 ${muted}`}
+                                                >
+                                                    {
+                                                        project.summary
+                                                    }
+                                                </p>
+
+                                                {tags.length >
+                                                    0 && (
+                                                    <div className="mt-4 flex flex-wrap gap-1.5">
+                                                        {tags
+                                                            .slice(
+                                                                0,
+                                                                4,
+                                                            )
+                                                            .map(
+                                                                (
+                                                                    tag,
+                                                                ) => (
+                                                                    <span
+                                                                        key={
+                                                                            tag
+                                                                        }
+                                                                        className={`rounded-full px-2.5 py-1 text-[9px] uppercase tracking-[0.12em] ${tagClass}`}
+                                                                    >
+                                                                        {
+                                                                            tag
+                                                                        }
+                                                                    </span>
+                                                                ),
+                                                            )}
+                                                    </div>
+                                                )}
+
+                                                {project.url && (
+                                                    <a
+                                                        href={
+                                                            project.url
+                                                        }
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                        className="mt-5 inline-flex items-center gap-2 text-xs font-bold text-sky-500 transition hover:text-sky-400"
+                                                    >
+                                                        View project
+                                                        <ArrowRight className="h-3.5 w-3.5" />
+                                                    </a>
+                                                )}
+                                            </div>
+                                        </motion.article>
+                                    );
+                                },
+                            )}
+                        </div>
+                    )}
+
+                    {hasMoreProjects && (
+                        <div className="mt-10 flex justify-center">
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    setShowAllProjects(
+                                        (current) => !current,
+                                    )
+                                }
+                                className={`rounded-full border px-6 py-3 text-sm font-semibold transition ${secondaryButton}`}
+                            >
+                                {showAllProjects
+                                    ? 'Show less'
+                                    : `Show all ${projects.length} projects`}
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </section>
+
+            {/* ------------------------------------------------------- */}
+            {/* SERVICES */}
+            {/* ------------------------------------------------------- */}
+
+            <section
+                id="services"
+                className="scroll-mt-24"
+            >
+                <div className="mx-auto max-w-7xl px-6 py-24">
+                    <div className="grid gap-12 lg:grid-cols-[0.7fr_1.3fr]">
+                        <div>
+                            <p className="text-xs font-bold uppercase tracking-[0.25em] text-sky-500">
+                                What I can build
+                            </p>
+
+                            <h2
+                                className={`mt-4 text-4xl font-black tracking-tight sm:text-5xl ${heading}`}
+                            >
+                                From idea
+                                <br />
+                                to production.
+                            </h2>
+
+                            <p
+                                className={`mt-5 max-w-md text-sm leading-7 ${muted}`}
+                            >
+                                I help businesses design, build and
+                                improve digital products that are
+                                useful, fast and easy to maintain.
+                            </p>
+
+                            <a
+                                href="#contact"
+                                className="mt-7 inline-flex items-center gap-2 text-sm font-bold text-sky-500 hover:text-sky-400"
+                            >
+                                Discuss your project
+                                <ArrowRight className="h-4 w-4" />
+                            </a>
+                        </div>
+
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            {services.map((service, index) => {
+                                const Icon = service.icon;
+
+                                return (
+                                    <motion.article
+                                        key={service.number}
+                                        initial={{
+                                            opacity: 0,
+                                            y: 20,
+                                        }}
+                                        whileInView={{
+                                            opacity: 1,
+                                            y: 0,
+                                        }}
+                                        viewport={{
+                                            once: true,
+                                            amount: 0.15,
+                                        }}
+                                        transition={{
+                                            duration: 0.5,
+                                            delay: index * 0.08,
+                                        }}
+                                        className={`group rounded-[26px] border p-6 transition duration-300 hover:-translate-y-1 ${softPanel}`}
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-xs font-black text-sky-500">
+                                                {
+                                                    service.number
+                                                }
+                                            </span>
+
+                                            <div
+                                                className={`flex h-10 w-10 items-center justify-center rounded-xl ${
+                                                    isLight
+                                                        ? 'bg-sky-50 text-sky-600'
+                                                        : 'bg-sky-500/10 text-sky-400'
+                                                }`}
+                                            >
+                                                <Icon className="h-4 w-4" />
+                                            </div>
+                                        </div>
+
+                                        <h3
+                                            className={`mt-8 text-xl font-bold ${heading}`}
+                                        >
+                                            {
+                                                service.title
+                                            }
+                                        </h3>
+
+                                        <p
+                                            className={`mt-3 text-sm leading-6 ${muted}`}
+                                        >
+                                            {service.text}
+                                        </p>
+                                    </motion.article>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* ------------------------------------------------------- */}
+            {/* STACK */}
+            {/* ------------------------------------------------------- */}
+
+            <section
+                id="stack"
+                className="scroll-mt-24"
+            >
+                <div className="mx-auto max-w-7xl px-6 py-24">
+                    <div
+                        className={`overflow-hidden rounded-[32px] border p-8 sm:p-10 lg:p-12 ${panel}`}
+                    >
+                        <div className="grid gap-12 lg:grid-cols-[0.7fr_1.3fr]">
+                            <div>
+                                <p className="text-xs font-bold uppercase tracking-[0.25em] text-sky-500">
+                                    Engineering stack
+                                </p>
+
+                                <h2
+                                    className={`mt-4 text-3xl font-black tracking-tight sm:text-4xl ${heading}`}
+                                >
+                                    Tools that turn
+                                    <br />
+                                    ideas into products.
+                                </h2>
+
+                                <p
+                                    className={`mt-4 max-w-md text-sm leading-7 ${muted}`}
+                                >
+                                    A modern, practical stack focused
+                                    on maintainability, performance
+                                    and great user experiences.
+                                </p>
+                            </div>
+
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                {[
+                                    {
+                                        title: 'Frontend',
+                                        icon: Code2,
+                                        items:
+                                            groupedSkills.frontend,
+                                    },
+                                    {
+                                        title: 'Backend',
+                                        icon: Server,
+                                        items:
+                                            groupedSkills.backend,
+                                    },
+                                    {
+                                        title: 'Data',
+                                        icon: Database,
+                                        items:
+                                            groupedSkills.data,
+                                    },
+                                    {
+                                        title: 'AI & Automation',
+                                        icon: Sparkles,
+                                        items:
+                                            groupedSkills.ai,
+                                    },
+                                ].map((group) => {
+                                    const Icon = group.icon;
+
+                                    return (
+                                        <div
+                                            key={group.title}
+                                            className={`rounded-2xl border p-5 ${softPanel}`}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <Icon className="h-4 w-4 text-sky-500" />
+
+                                                <h3
+                                                    className={`text-sm font-bold ${heading}`}
+                                                >
+                                                    {
+                                                        group.title
+                                                    }
+                                                </h3>
+                                            </div>
+
+                                            <div className="mt-4 flex flex-wrap gap-2">
+                                                {group.items.map(
+                                                    (
+                                                        skill,
+                                                    ) => (
+                                                        <span
+                                                            key={
+                                                                skill
+                                                            }
+                                                            className={`rounded-full border px-3 py-1.5 text-[10px] font-medium ${tagClass}`}
+                                                        >
+                                                            {
+                                                                skill
+                                                            }
+                                                        </span>
+                                                    ),
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* ------------------------------------------------------- */}
+            {/* ABOUT / PHILOSOPHY */}
+            {/* ------------------------------------------------------- */}
+
+            <section>
+                <div className="mx-auto max-w-7xl px-6 py-24">
+                    <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
+                        <div>
+                            <p className="text-xs font-bold uppercase tracking-[0.25em] text-sky-500">
+                                How I work
+                            </p>
+
+                            <h2
+                                className={`mt-4 text-4xl font-black tracking-tight sm:text-5xl ${heading}`}
+                            >
+                                Good software
+                                <br />
+                                starts with clarity.
+                            </h2>
+
+                            <p
+                                className={`mt-5 max-w-xl text-base leading-7 ${muted}`}
+                            >
+                                The goal isn't to write the most code.
+                                It's to understand the problem, design
+                                the right solution and ship software
+                                that creates lasting value.
+                            </p>
+                        </div>
+
+                        <div className="space-y-3">
+                            {[
+                                {
+                                    number: '01',
+                                    title: 'Business first',
+                                    text: 'Understand the goal before choosing the technology.',
+                                },
+                                {
+                                    number: '02',
+                                    title: 'Clean engineering',
+                                    text: 'Build software that is reliable, maintainable and ready to grow.',
+                                },
+                                {
+                                    number: '03',
+                                    title: 'Long-term thinking',
+                                    text: 'Create systems that continue working after launch.',
+                                },
+                            ].map((item) => (
+                                <div
+                                    key={item.number}
+                                    className={`group flex gap-5 rounded-2xl border p-5 transition hover:-translate-y-0.5 ${softPanel}`}
+                                >
+                                    <span className="pt-1 text-xs font-black text-sky-500">
+                                        {item.number}
+                                    </span>
+
+                                    <div>
+                                        <h3
+                                            className={`font-bold ${heading}`}
+                                        >
+                                            {item.title}
+                                        </h3>
+
+                                        <p
+                                            className={`mt-1 text-sm leading-6 ${muted}`}
+                                        >
+                                            {item.text}
+                                        </p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* ------------------------------------------------------- */}
+            {/* CONTACT */}
+            {/* ------------------------------------------------------- */}
+
+            <section
+                id="contact"
+                className="scroll-mt-24"
+            >
+                <div className="mx-auto max-w-7xl px-6 pb-16 pt-12">
+                    <motion.div
+                        initial={{
+                            opacity: 0,
+                            y: 20,
+                        }}
+                        whileInView={{
+                            opacity: 1,
+                            y: 0,
+                        }}
+                        viewport={{
+                            once: true,
+                        }}
+                        className="relative overflow-hidden rounded-[36px] bg-sky-500 p-8 text-center sm:p-12 lg:p-16"
+                    >
+                        <div className="absolute -left-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+                        <div className="absolute -bottom-20 -right-20 h-64 w-64 rounded-full bg-slate-950/10 blur-3xl" />
+
+                        <div className="relative">
+                            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-white shadow-xl">
+                                <Mail className="h-5 w-5" />
+                            </div>
+
+                            <p className="mt-6 text-xs font-bold uppercase tracking-[0.25em] text-slate-950/60">
+                                Have an idea worth building?
+                            </p>
+
+                            <h2 className="mx-auto mt-3 max-w-3xl text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">
+                                Let&apos;s turn it into something remarkable.
+                            </h2>
+
+                            <p className="mx-auto mt-5 max-w-xl text-sm leading-6 text-slate-950/70">
+                                Tell me what you're building, where
+                                you're stuck, or what you want to
+                                improve. Let's figure out the right
+                                next step.
+                            </p>
+
+                            <a
+                                href="mailto:azulrio906top@gmail.com"
+                                className="mt-8 inline-flex items-center gap-2 rounded-full bg-slate-950 px-6 py-3.5 text-sm font-bold text-white shadow-xl transition hover:-translate-y-0.5 hover:bg-slate-800"
+                            >
+                                <Mail className="h-4 w-4" />
+                                azulrio906top@gmail.com
+                                <ArrowRight className="h-4 w-4" />
+                            </a>
+                        </div>
+                    </motion.div>
+                </div>
+            </section>
+
+            {/* ------------------------------------------------------- */}
+            {/* FOOTER */}
+            {/* ------------------------------------------------------- */}
+
+            <footer>
+                <div className="mx-auto flex max-w-7xl flex-col gap-5 px-6 py-8 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <p
+                            className={`text-sm font-bold ${heading}`}
+                        >
+                            FLUNCO RUIZ
+                        </p>
+
+                        <p
+                            className={`mt-1 text-xs ${muted}`}
+                        >
+                            Full-stack developer & product designer.
+                        </p>
+                    </div>
+
+                    <div className="flex items-center gap-5">
+                        <a
+                            href="#work"
+                            className={`text-xs font-medium hover:text-sky-500 ${muted}`}
+                        >
+                            Work
+                        </a>
+
+                        <a
+                            href="#services"
+                            className={`text-xs font-medium hover:text-sky-500 ${muted}`}
+                        >
+                            Services
+                        </a>
+
+                        <a
+                            href="#contact"
+                            className={`text-xs font-medium hover:text-sky-500 ${muted}`}
+                        >
+                            Contact
+                        </a>
+
+                        <a
+                            href="/admin"
+                            className={`text-xs font-medium hover:text-sky-500 ${muted}`}
+                        >
+                            Admin
                         </a>
                     </div>
-                </section>
-            </div>
+                </div>
+            </footer>
+
+            {/* ------------------------------------------------------- */}
+            {/* CHATBOT */}
+            {/* ------------------------------------------------------- */}
+
             <PortfolioChatbot />
         </main>
     );

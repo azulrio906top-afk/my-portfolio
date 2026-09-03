@@ -14,6 +14,9 @@ model Skill {
   order     Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([category])
+  @@index([order])
 }
 
 model Project {
@@ -30,6 +33,9 @@ model Project {
   tags        String   @default("")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@index([featured])
+  @@index([status])
 }
 
 model AdminUser {
@@ -40,6 +46,8 @@ model AdminUser {
   role         String   @default("admin")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  @@index([role])
 }
 
 model Profile {
@@ -55,14 +63,16 @@ model Profile {
 }
 
 model Experience {
-  id          Int      @id @default(autoincrement())
-  company     String
-  position    String
-  startDate   String
-  endDate     String?
-  description String
-  technologies String  @default("")
-  current     Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           Int      @id @default(autoincrement())
+  company      String
+  position     String
+  startDate    String
+  endDate      String?
+  description  String
+  technologies String   @default("")
+  current      Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([current])
 }

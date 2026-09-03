@@ -100,25 +100,7 @@ export default async function AdminPage() {
     ]);
 
     return (
-        <div className="mx-auto max-w-7xl">
-            <header className="mb-10 flex flex-col gap-4 rounded-3xl border border-[var(--border)] bg-[var(--panel)] p-6 text-[var(--foreground)] shadow-lg shadow-slate-900/5 md:flex-row md:items-center md:justify-between">
-                <div>
-                    <p className="text-sm uppercase tracking-[0.22em] text-sky-500">Admin</p>
-                    <h1 className="mt-2 text-3xl font-bold text-[var(--foreground)]">Portfolio control center</h1>
-                </div>
-
-                <div className="flex items-center gap-3">
-                    <ThemeToggle className="border-[var(--border)] bg-[var(--button)] text-[var(--foreground)] hover:bg-[var(--button-hover)]" />
-                    <a
-                        href="/"
-                        className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--button)] px-4 py-2 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--button-hover)]"
-                    >
-                        Home
-                    </a>
-                    <SignOutButton className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--button)] px-4 py-2 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--button-hover)]" />
-                </div>
-            </header>
-
+        <div className="mx-auto">
             <AdminDashboard
                 profile={profile}
                 skills={skills}
