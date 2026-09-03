@@ -2,13 +2,17 @@
 
 import {
     FormEvent,
+    KeyboardEvent,
     useEffect,
     useRef,
     useState,
 } from "react";
 
+import { AnimatePresence, motion } from "framer-motion";
+
 import {
     Bot,
+    Check,
     RotateCcw,
     Send,
     Sparkles,
@@ -21,7 +25,7 @@ type Message = {
     content: string;
 };
 
-const CLYDE_IMAGE = "/chatbot/bot.png";
+const CLYDE_IMAGE = "https://cdn.prod.website-files.com/6257adef93867e50d84d30e2/6707a0ea5ddb44cae1dd6b29_clyde_pose_02%201.webp";
 
 const suggestions = [
     "What are your main skills?",
@@ -37,6 +41,101 @@ const welcomeMessage: Message = {
         "Hi! I'm the portfolio assistant. Ask me about Flunco's skills, projects, experience, or what he can build for your business.",
 };
 
+const launcherTransition = {
+    type: "spring" as const,
+    stiffness: 260,
+    damping: 20,
+};
+
+const messageTransition = {
+    duration: 0.28,
+    ease: [0.16, 1, 0.3, 1] as const,
+};
+
+function BotAvatar({
+    size = "md",
+    showOnline = false,
+}: {
+    size?: "sm" | "md" | "lg";
+    showOnline?: boolean;
+}) {
+    const sizeClass =
+        size === "sm"
+            ? "h-8 w-8"
+            : size === "lg"
+              ? "h-14 w-14"
+              : "h-11 w-11";
+
+    return (
+        <div
+            className={`relative shrink-0 overflow-hidden rounded-full ${sizeClass}`}
+        >
+            <img
+                src={CLYDE_IMAGE}
+                alt="Portfolio AI assistant"
+                className="h-full w-full object-contain"
+            />
+
+            {showOnline && (
+                <span
+                    className="
+                        absolute
+                        bottom-0.5
+                        right-0.5
+                        h-3
+                        w-3
+                        rounded-full
+                        border-2
+                        border-white
+                        bg-emerald-400
+                        shadow-sm
+                    "
+                    aria-label="Online"
+                />
+            )}
+        </div>
+    );
+}
+
+function TypingIndicator() {
+    return (
+        <div className="flex items-end gap-2">
+            <BotAvatar size="sm" />
+
+            <div
+                className="
+                    rounded-2xl
+                    rounded-bl-md
+                    border
+                    border-slate-200
+                    bg-white
+                    px-4
+                    py-3
+                    shadow-sm
+                "
+            >
+                <div className="flex items-center gap-1.5">
+                    {[0, 120, 240].map((delay) => (
+                        <motion.span
+                            key={delay}
+                            animate={{
+                                y: [0, -3, 0],
+                                opacity: [0.45, 1, 0.45],
+                            }}
+                            transition={{
+                                duration: 0.8,
+                                repeat: Infinity,
+                                delay: delay / 1000,
+                            }}
+                            className="h-1.5 w-1.5 rounded-full bg-slate-400"
+                        />
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export default function PortfolioChatbot() {
     const [open, setOpen] = useState(false);
 
@@ -48,19 +147,56 @@ export default function PortfolioChatbot() {
 
     const [loading, setLoading] = useState(false);
 
+    const inputRef = useRef<HTMLInputElement>(null);
     const bottomRef = useRef<HTMLDivElement>(null);
 
     /*
-     * Automatically scroll to the newest message.
+     * Keep the newest message visible.
      */
     useEffect(() => {
         bottomRef.current?.scrollIntoView({
             behavior: "smooth",
+            block: "nearest",
         });
     }, [messages, loading]);
 
     /*
-     * Send message to the API.
+     * Focus the input whenever the chatbot opens.
+     */
+    useEffect(() => {
+        if (!open) {
+            return;
+        }
+
+        const timer = window.setTimeout(() => {
+            inputRef.current?.focus();
+        }, 250);
+
+        return () => window.clearTimeout(timer);
+    }, [open]);
+
+    /*
+     * Prevent the page behind the chatbot from scrolling
+     * on very small screens while the window is open.
+     */
+    useEffect(() => {
+        if (!open || window.innerWidth >= 640) {
+            return;
+        }
+
+        const previousOverflow =
+            document.body.style.overflow;
+
+        document.body.style.overflow = "hidden";
+
+        return () => {
+            document.body.style.overflow =
+                previousOverflow;
+        };
+    }, [open]);
+
+    /*
+     * Send a message to the existing API.
      */
     async function sendMessage(customMessage?: string) {
         const text =
@@ -79,9 +215,8 @@ export default function PortfolioChatbot() {
         };
 
         /*
-         * Keep the history before adding the new
-         * user message. This prevents the current
-         * message from being duplicated in history.
+         * Capture history before adding the current message.
+         * This preserves your existing API behavior.
          */
         const history = messages;
 
@@ -145,11 +280,15 @@ export default function PortfolioChatbot() {
             ]);
         } finally {
             setLoading(false);
+
+            window.setTimeout(() => {
+                inputRef.current?.focus();
+            }, 50);
         }
     }
 
     /*
-     * Clear conversation.
+     * Clear the conversation.
      */
     function clearChat() {
         if (loading) {
@@ -164,6 +303,10 @@ export default function PortfolioChatbot() {
         ]);
 
         setInput("");
+
+        window.setTimeout(() => {
+            inputRef.current?.focus();
+        }, 50);
     }
 
     /*
@@ -177,656 +320,810 @@ export default function PortfolioChatbot() {
         void sendMessage();
     }
 
+    /*
+     * Enter sends the message.
+     * Shift + Enter remains available for future textarea use.
+     */
+    function handleKeyDown(
+        event: KeyboardEvent<HTMLInputElement>,
+    ) {
+        if (
+            event.key === "Enter" &&
+            !event.shiftKey
+        ) {
+            event.preventDefault();
+
+            void sendMessage();
+        }
+    }
+
     return (
         <>
             {/* =====================================================
-                CHATBOT LAUNCHER
+                FLOATING LAUNCHER
             ====================================================== */}
 
-            {!open && (
-                <div
-                    className="
-                        fixed
-                        bottom-6
-                        right-6
-                        z-[99999]
-                    "
-                >
-                    <button
-                        type="button"
-                        onClick={() => setOpen(true)}
+            <AnimatePresence>
+                {!open && (
+                    <motion.div
+                        initial={{
+                            opacity: 0,
+                            scale: 0.7,
+                            y: 20,
+                        }}
+                        animate={{
+                            opacity: 1,
+                            scale: 1,
+                            y: 0,
+                        }}
+                        exit={{
+                            opacity: 0,
+                            scale: 0.7,
+                            y: 20,
+                        }}
+                        transition={{
+                            duration: 0.3,
+                            ease: [0.16, 1, 0.3, 1],
+                        }}
                         className="
-                            group
-                            relative
-                            h-24
-                            w-24
-                            rounded-full
-                            bg-white
-                            p-1
-                            shadow-2xl
-                            transition-all
-                            duration-300
-                            hover:scale-110
-                            hover:shadow-sky-400/40
-                            active:scale-95
-                            focus:outline-none
-                            focus:ring-4
-                            focus:ring-sky-400/30
+                            fixed
+                            bottom-5
+                            right-5
+                            z-[99999]
 
-                            sm:h-28
-                            sm:w-28
-
-                            lg:h-32
-                            lg:w-32
+                            sm:bottom-6
+                            sm:right-6
                         "
-                        aria-label="Open portfolio assistant"
                     >
-                        {/* =========================================
-                            CLYDE IMAGE
-                        ========================================== */}
-
-                        <div
+                        <motion.button
+                            type="button"
+                            onClick={() => setOpen(true)}
+                            whileHover={{
+                                scale: 1.06,
+                            }}
+                            whileTap={{
+                                scale: 0.94,
+                            }}
+                            transition={launcherTransition}
                             className="
+                                group
                                 relative
-                                h-full
-                                w-full
-                                overflow-hidden
-                                rounded-full
-                                bg-slate-100
-                            "
-                        >
-                            <img
-                                src={CLYDE_IMAGE}
-                                alt="Portfolio AI assistant"
-                                className="
-                                    h-full
-                                    w-full
-                                    object-cover
-                                    transition-transform
-                                    duration-500
-                                    group-hover:scale-105
-                                "
-                            />
-
-                            {/* subtle shine */}
-                            <div
-                                className="
-                                    pointer-events-none
-                                    absolute
-                                    inset-0
-                                    rounded-full
-                                    bg-gradient-to-br
-                                    from-white/30
-                                    via-transparent
-                                    to-slate-900/10
-                                "
-                            />
-                        </div>
-
-                        {/* =========================================
-                            AI BADGE
-                        ========================================== */}
-
-                        <span
-                            className="
-                                absolute
-                                -right-1
-                                -top-1
-                                z-[100]
                                 flex
-                                h-9
-                                w-9
+                                h-[76px]
+                                w-[76px]
                                 items-center
                                 justify-center
                                 rounded-full
-                                border-4
-                                border-white
-                                bg-emerald-500
-                                text-[10px]
-                                font-black
-                                tracking-tight
-                                text-white
-                                shadow-lg
-                                shadow-emerald-500/30
-
-                                sm:h-10
-                                sm:w-10
-                                sm:text-[11px]
-                            "
-                        >
-                            AI
-                        </span>
-
-                        {/* =========================================
-                            ONLINE DOT
-                        ========================================== */}
-
-                        <span
-                            className="
-                                absolute
-                                bottom-2
-                                right-2
-                                z-[100]
-                                h-4
-                                w-4
-                                rounded-full
-                                border-2
-                                border-white
-                                bg-emerald-500
-                                shadow-md
-                            "
-                            aria-label="Online"
-                        />
-
-                        {/* =========================================
-                            HOVER LABEL
-                        ========================================== */}
-
-                        <span
-                            className="
-                                pointer-events-none
-                                absolute
-                                right-[calc(100%+14px)]
-                                top-1/2
-                                z-[100]
-                                hidden
-                                -translate-y-1/2
-                                whitespace-nowrap
-                                rounded-2xl
                                 border
-                                border-slate-200
+                                border-white/80
                                 bg-white
-                                px-4
-                                py-2.5
-                                text-sm
-                                font-medium
-                                text-slate-700
-                                opacity-0
-                                shadow-xl
-                                transition-all
-                                duration-200
+                                p-1
+                                shadow-2xl
+                                shadow-slate-950/20
+                                outline-none
+                                ring-sky-400/30
+                                transition
+                                focus:ring-4
 
-                                lg:block
-                                lg:group-hover:translate-x-1
-                                lg:group-hover:opacity-100
+                                sm:h-[84px]
+                                sm:w-[84px]
+
+                                lg:h-[92px]
+                                lg:w-[92px]
                             "
+                            aria-label="Open portfolio assistant"
                         >
-                            Ask my AI assistant
-                        </span>
-                    </button>
-                </div>
-            )}
+                            {/* Soft ambient glow */}
+
+                            <motion.div
+                                animate={{
+                                    scale: [1, 1.08, 1],
+                                    opacity: [
+                                        0.18,
+                                        0.3,
+                                        0.18,
+                                    ],
+                                }}
+                                transition={{
+                                    duration: 3,
+                                    repeat: Infinity,
+                                    ease: "easeInOut",
+                                }}
+                                className="
+                                    pointer-events-none
+                                    absolute
+                                    -inset-3
+                                    rounded-full
+                                    bg-sky-400
+                                    blur-2xl
+                                "
+                            />
+
+                            {/* Avatar */}
+
+                            <div
+                                className="
+                                    relative
+                                    z-10
+                                    h-full
+                                    w-full
+                                    overflow-hidden
+                                    rounded-full
+                                    bg-transparent
+                                "
+                            >
+                                <img
+                                    src={CLYDE_IMAGE}
+                                    alt="Portfolio AI assistant"
+                                    className="
+                                        h-full
+                                        w-full
+                                        object-contain
+                                        transition-transform
+                                        duration-500
+                                        group-hover:scale-105
+                                    "
+                                />
+                            </div>
+
+                            {/* AI badge */}
+
+                            <span
+                                className="
+                                    absolute
+                                    -right-1
+                                    -top-1
+                                    z-20
+                                    flex
+                                    h-8
+                                    w-8
+                                    items-center
+                                    justify-center
+                                    rounded-full
+                                    border-[3px]
+                                    border-white
+                                    bg-emerald-500
+                                    text-[9px]
+                                    font-black
+                                    tracking-tight
+                                    text-white
+                                    shadow-lg
+                                    shadow-emerald-500/30
+                                "
+                            >
+                                AI
+                            </span>
+
+                            {/* Online dot */}
+
+                            <motion.span
+                                animate={{
+                                    boxShadow: [
+                                        "0 0 0 0 rgba(16,185,129,0.35)",
+                                        "0 0 0 5px rgba(16,185,129,0)",
+                                    ],
+                                }}
+                                transition={{
+                                    duration: 1.8,
+                                    repeat: Infinity,
+                                }}
+                                className="
+                                    absolute
+                                    bottom-1.5
+                                    right-1.5
+                                    z-20
+                                    h-4
+                                    w-4
+                                    rounded-full
+                                    border-2
+                                    border-white
+                                    bg-emerald-500
+                                "
+                                aria-label="Online"
+                            />
+
+                            {/* Hover label */}
+
+                            <span
+                                className="
+                                    pointer-events-none
+                                    absolute
+                                    right-[calc(100%+14px)]
+                                    top-1/2
+                                    z-30
+                                    hidden
+                                    -translate-y-1/2
+                                    translate-x-2
+                                    whitespace-nowrap
+                                    rounded-2xl
+                                    border
+                                    border-slate-200
+                                    bg-white
+                                    px-4
+                                    py-2.5
+                                    text-sm
+                                    font-semibold
+                                    text-slate-700
+                                    opacity-0
+                                    shadow-xl
+                                    transition-all
+                                    duration-200
+
+                                    lg:block
+                                    lg:group-hover:translate-x-0
+                                    lg:group-hover:opacity-100
+                                "
+                            >
+                                Ask my AI assistant
+                            </span>
+                        </motion.button>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* =====================================================
                 CHAT WINDOW
             ====================================================== */}
 
-            {open && (
-                <div
-                    className="
-                        fixed
-                        bottom-4
-                        right-4
-                        z-[99999]
-
-                        flex
-                        h-[calc(100vh-2rem)]
-                        max-h-[720px]
-                        w-[calc(100vw-2rem)]
-                        max-w-[420px]
-                        flex-col
-                        overflow-hidden
-                        rounded-[28px]
-                        border
-                        border-slate-200
-                        bg-white
-                        shadow-2xl
-                        shadow-slate-950/20
-
-                        sm:bottom-6
-                        sm:right-6
-                        sm:h-[650px]
-                    "
-                >
-                    {/* =================================================
-                        HEADER
-                    ================================================== */}
-
-                    <header
+            <AnimatePresence>
+                {open && (
+                    <motion.div
+                        initial={{
+                            opacity: 0,
+                            y: 24,
+                            scale: 0.96,
+                        }}
+                        animate={{
+                            opacity: 1,
+                            y: 0,
+                            scale: 1,
+                        }}
+                        exit={{
+                            opacity: 0,
+                            y: 24,
+                            scale: 0.96,
+                        }}
+                        transition={{
+                            duration: 0.28,
+                            ease: [0.16, 1, 0.3, 1],
+                        }}
                         className="
-                            relative
+                            fixed
+                            inset-x-3
+                            bottom-3
+                            z-[99999]
                             flex
-                            shrink-0
-                            items-center
-                            justify-between
+                            h-[calc(100dvh-1.5rem)]
+                            max-h-[760px]
+                            flex-col
                             overflow-hidden
-                            bg-slate-950
-                            px-5
-                            py-4
-                            text-white
+                            rounded-[28px]
+                            border
+                            border-slate-200
+                            bg-white
+                            shadow-2xl
+                            shadow-slate-950/25
+
+                            sm:bottom-6
+                            sm:left-auto
+                            sm:right-6
+                            sm:h-[650px]
+                            sm:w-[420px]
                         "
+                        role="dialog"
+                        aria-modal="false"
+                        aria-label="Portfolio Assistant"
                     >
-                        {/* Decorative glow */}
+                        {/* =================================================
+                            HEADER
+                        ================================================== */}
 
-                        <div
+                        <header
                             className="
-                                pointer-events-none
-                                absolute
-                                -right-10
-                                -top-10
-                                h-32
-                                w-32
-                                rounded-full
-                                bg-sky-500/20
-                                blur-3xl
+                                relative
+                                shrink-0
+                                overflow-hidden
+                                bg-slate-950
+                                px-5
+                                py-4
+                                text-white
                             "
-                        />
-
-                        <div className="relative flex items-center gap-3">
-                            {/* Small Clyde avatar */}
+                        >
+                            {/* Header glow */}
 
                             <div
                                 className="
-                                    relative
-                                    h-11
-                                    w-11
-                                    overflow-hidden
+                                    pointer-events-none
+                                    absolute
+                                    -right-16
+                                    -top-20
+                                    h-44
+                                    w-44
                                     rounded-full
-                                    border-2
-                                    border-white/20
-                                    bg-white
+                                    bg-sky-500/20
+                                    blur-3xl
                                 "
-                            >
-                                <img
-                                    src={CLYDE_IMAGE}
-                                    alt="AI assistant"
-                                    className="
-                                        h-full
-                                        w-full
-                                        object-cover
-                                    "
-                                />
+                            />
 
-                                <span
-                                    className="
-                                        absolute
-                                        bottom-0
-                                        right-0
-                                        h-3
-                                        w-3
-                                        rounded-full
-                                        border-2
-                                        border-white
-                                        bg-emerald-400
-                                    "
-                                />
-                            </div>
-
-                            <div>
-                                <div className="flex items-center gap-2">
-                                    <p className="font-semibold">
-                                        Portfolio Assistant
-                                    </p>
-
-                                    <Sparkles className="h-4 w-4 text-sky-400" />
-                                </div>
-
-                                <p className="mt-0.5 text-xs text-slate-400">
-                                    Ask me about Flunco
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* Header buttons */}
-
-                        <div className="relative flex items-center gap-1">
-                            <button
-                                type="button"
-                                onClick={clearChat}
-                                disabled={loading}
+                            <div
                                 className="
-                                    rounded-xl
-                                    p-2
-                                    text-slate-400
-                                    transition
-                                    hover:bg-white/10
-                                    hover:text-white
-                                    disabled:cursor-not-allowed
-                                    disabled:opacity-40
+                                    pointer-events-none
+                                    absolute
+                                    -bottom-24
+                                    left-10
+                                    h-32
+                                    w-32
+                                    rounded-full
+                                    bg-indigo-500/10
+                                    blur-3xl
                                 "
-                                aria-label="Clear conversation"
-                                title="Clear conversation"
-                            >
-                                <RotateCcw className="h-4 w-4" />
-                            </button>
+                            />
 
-                            <button
-                                type="button"
-                                onClick={() => setOpen(false)}
-                                className="
-                                    rounded-xl
-                                    p-2
-                                    text-slate-400
-                                    transition
-                                    hover:bg-white/10
-                                    hover:text-white
-                                "
-                                aria-label="Close chatbot"
-                                title="Close chatbot"
-                            >
-                                <X className="h-5 w-5" />
-                            </button>
-                        </div>
-                    </header>
-
-                    {/* =================================================
-                        MESSAGES
-                    ================================================== */}
-
-                    <div
-                        className="
-                            flex-1
-                            space-y-4
-                            overflow-y-auto
-                            bg-slate-50
-                            px-4
-                            py-5
-                            overscroll-contain
-                        "
-                    >
-                        {messages.map((message) => {
-                            const isUser =
-                                message.role === "user";
-
-                            return (
-                                <div
-                                    key={message.id}
-                                    className={`flex ${
-                                        isUser
-                                            ? "justify-end"
-                                            : "justify-start"
-                                    }`}
-                                >
-                                    {!isUser && (
-                                        <div
-                                            className="
-                                                mr-2
-                                                mt-1
-                                                flex
-                                                h-8
-                                                w-8
-                                                shrink-0
-                                                items-center
-                                                justify-center
-                                                overflow-hidden
-                                                rounded-full
-                                                bg-white
-                                                shadow-sm
-                                            "
-                                        >
-                                            <img
-                                                src={CLYDE_IMAGE}
-                                                alt=""
-                                                className="
-                                                    h-full
-                                                    w-full
-                                                    object-cover
-                                                "
-                                            />
-                                        </div>
-                                    )}
+                            <div className="relative flex items-center justify-between gap-4">
+                                <div className="flex min-w-0 items-center gap-3">
+                                    {/* Avatar */}
 
                                     <div
-                                        className={`
-                                            max-w-[82%]
-                                            rounded-2xl
-                                            px-4
-                                            py-3
-                                            text-sm
-                                            leading-6
-                                            ${
-                                                isUser
-                                                    ? `
-                                                        rounded-br-md
-                                                        bg-sky-500
-                                                        text-white
-                                                        shadow-sm
-                                                    `
-                                                    : `
-                                                        rounded-bl-md
-                                                        border
-                                                        border-slate-200
-                                                        bg-white
-                                                        text-slate-700
-                                                        shadow-sm
-                                                    `
-                                            }
-                                        `}
-                                    >
-                                        <p className="whitespace-pre-wrap">
-                                            {message.content}
-                                        </p>
-                                    </div>
-                                </div>
-                            );
-                        })}
-
-                        {/* =============================================
-                            LOADING
-                        ============================================== */}
-
-                        {loading && (
-                            <div className="flex justify-start">
-                                <div
-                                    className="
-                                        mr-2
-                                        mt-1
-                                        flex
-                                        h-8
-                                        w-8
-                                        shrink-0
-                                        items-center
-                                        justify-center
-                                        overflow-hidden
-                                        rounded-full
-                                        bg-white
-                                        shadow-sm
-                                    "
-                                >
-                                    <img
-                                        src={CLYDE_IMAGE}
-                                        alt=""
                                         className="
-                                            h-full
-                                            w-full
-                                            object-cover
+                                            flex
+                                            h-11
+                                            w-11
+                                            shrink-0
+                                            items-center
+                                            justify-center
+                                            overflow-hidden
+                                            rounded-full
+                                            bg-white/[0.04]
+                                            ring-1
+                                            ring-white/15
                                         "
-                                    />
-                                </div>
-
-                                <div
-                                    className="
-                                        rounded-2xl
-                                        rounded-bl-md
-                                        border
-                                        border-slate-200
-                                        bg-white
-                                        px-4
-                                        py-3
-                                        shadow-sm
-                                    "
-                                >
-                                    <div className="flex items-center gap-1.5">
-                                        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400" />
-
-                                        <span
-                                            className="
-                                                h-1.5
-                                                w-1.5
-                                                animate-bounce
-                                                rounded-full
-                                                bg-slate-400
-                                                [animation-delay:120ms]
-                                            "
-                                        />
-
-                                        <span
-                                            className="
-                                                h-1.5
-                                                w-1.5
-                                                animate-bounce
-                                                rounded-full
-                                                bg-slate-400
-                                                [animation-delay:240ms]
-                                            "
+                                    >
+                                        <BotAvatar
+                                            size="md"
+                                            showOnline
                                         />
                                     </div>
+
+                                    <div className="min-w-0">
+                                        <div className="flex items-center gap-2">
+                                            <p className="truncate text-sm font-bold">
+                                                Portfolio Assistant
+                                            </p>
+
+                                            <Sparkles className="h-3.5 w-3.5 shrink-0 text-sky-400" />
+                                        </div>
+
+                                        <div className="mt-1 flex items-center gap-1.5">
+                                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+
+                                            <p className="text-[11px] text-slate-400">
+                                                Online · Ask me anything
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Header controls */}
+
+                                <div className="relative flex shrink-0 items-center gap-1">
+                                    <button
+                                        type="button"
+                                        onClick={clearChat}
+                                        disabled={loading}
+                                        className="
+                                            rounded-xl
+                                            p-2
+                                            text-slate-400
+                                            transition
+                                            hover:bg-white/10
+                                            hover:text-white
+                                            disabled:cursor-not-allowed
+                                            disabled:opacity-30
+                                        "
+                                        aria-label="Clear conversation"
+                                        title="Clear conversation"
+                                    >
+                                        <RotateCcw className="h-4 w-4" />
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setOpen(false)
+                                        }
+                                        className="
+                                            rounded-xl
+                                            p-2
+                                            text-slate-400
+                                            transition
+                                            hover:bg-white/10
+                                            hover:text-white
+                                        "
+                                        aria-label="Close chatbot"
+                                        title="Close chatbot"
+                                    >
+                                        <X className="h-5 w-5" />
+                                    </button>
                                 </div>
                             </div>
-                        )}
+                        </header>
 
-                        <div ref={bottomRef} />
-                    </div>
+                        {/* =================================================
+                            MESSAGES
+                        ================================================== */}
 
-                    {/* =================================================
-                        SUGGESTIONS
-                    ================================================== */}
-
-                    {messages.length === 1 && !loading && (
                         <div
                             className="
+                                relative
+                                flex-1
+                                space-y-4
+                                overflow-y-auto
+                                overscroll-contain
+                                bg-slate-50
+                                px-4
+                                py-5
+
+                                [scrollbar-color:#cbd5e1_transparent]
+                                [scrollbar-width:thin]
+                            "
+                        >
+                            {/* Welcome helper */}
+
+                            {messages.length === 1 && (
+                                <div className="mb-5 flex items-center justify-center">
+                                    <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-400 shadow-sm">
+                                        <Bot className="h-3 w-3 text-sky-500" />
+                                        Portfolio AI
+                                    </div>
+                                </div>
+                            )}
+
+                            <AnimatePresence initial={false}>
+                                {messages.map((message) => {
+                                    const isUser =
+                                        message.role === "user";
+
+                                    return (
+                                        <motion.div
+                                            key={message.id}
+                                            initial={{
+                                                opacity: 0,
+                                                y: 10,
+                                                scale: 0.98,
+                                            }}
+                                            animate={{
+                                                opacity: 1,
+                                                y: 0,
+                                                scale: 1,
+                                            }}
+                                            transition={
+                                                messageTransition
+                                            }
+                                            className={`flex ${
+                                                isUser
+                                                    ? "justify-end"
+                                                    : "justify-start"
+                                            }`}
+                                        >
+                                            {!isUser && (
+                                                <div className="mr-2 mt-1">
+                                                    <BotAvatar size="sm" />
+                                                </div>
+                                            )}
+
+                                            <div
+                                                className={`
+                                                    max-w-[82%]
+                                                    rounded-2xl
+                                                    px-4
+                                                    py-3
+                                                    text-sm
+                                                    leading-6
+                                                    ${
+                                                        isUser
+                                                            ? `
+                                                                rounded-br-md
+                                                                bg-sky-500
+                                                                text-white
+                                                                shadow-sm
+                                                            `
+                                                            : `
+                                                                rounded-bl-md
+                                                                border
+                                                                border-slate-200
+                                                                bg-white
+                                                                text-slate-700
+                                                                shadow-sm
+                                                            `
+                                                    }
+                                                `}
+                                            >
+                                                <p className="whitespace-pre-wrap break-words">
+                                                    {
+                                                        message.content
+                                                    }
+                                                </p>
+                                            </div>
+                                        </motion.div>
+                                    );
+                                })}
+                            </AnimatePresence>
+
+                            {/* Typing */}
+
+                            <AnimatePresence>
+                                {loading && (
+                                    <motion.div
+                                        initial={{
+                                            opacity: 0,
+                                            y: 8,
+                                        }}
+                                        animate={{
+                                            opacity: 1,
+                                            y: 0,
+                                        }}
+                                        exit={{
+                                            opacity: 0,
+                                            y: -4,
+                                        }}
+                                    >
+                                        <TypingIndicator />
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+
+                            <div ref={bottomRef} />
+                        </div>
+
+                        {/* =================================================
+                            SUGGESTIONS
+                        ================================================== */}
+
+                        <AnimatePresence>
+                            {messages.length === 1 &&
+                                !loading && (
+                                    <motion.div
+                                        initial={{
+                                            opacity: 0,
+                                            height: 0,
+                                        }}
+                                        animate={{
+                                            opacity: 1,
+                                            height: "auto",
+                                        }}
+                                        exit={{
+                                            opacity: 0,
+                                            height: 0,
+                                        }}
+                                        className="
+                                            shrink-0
+                                            overflow-hidden
+                                            border-t
+                                            border-slate-100
+                                            bg-white
+                                        "
+                                    >
+                                        <div className="px-4 py-3">
+                                            <div className="mb-2.5 flex items-center gap-2">
+                                                <Sparkles className="h-3.5 w-3.5 text-sky-500" />
+
+                                                <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                                                    Try asking
+                                                </span>
+                                            </div>
+
+                                            <div className="flex flex-wrap gap-2">
+                                                {suggestions.map(
+                                                    (
+                                                        suggestion,
+                                                    ) => (
+                                                        <motion.button
+                                                            key={
+                                                                suggestion
+                                                            }
+                                                            type="button"
+                                                            whileHover={{
+                                                                y: -1,
+                                                            }}
+                                                            whileTap={{
+                                                                scale: 0.97,
+                                                            }}
+                                                            onClick={() =>
+                                                                void sendMessage(
+                                                                    suggestion,
+                                                                )
+                                                            }
+                                                            className="
+                                                                rounded-full
+                                                                border
+                                                                border-slate-200
+                                                                bg-slate-50
+                                                                px-3
+                                                                py-2
+                                                                text-left
+                                                                text-[11px]
+                                                                font-medium
+                                                                text-slate-600
+                                                                transition
+                                                                hover:border-sky-300
+                                                                hover:bg-sky-50
+                                                                hover:text-sky-600
+                                                            "
+                                                        >
+                                                            {
+                                                                suggestion
+                                                            }
+                                                        </motion.button>
+                                                    ),
+                                                )}
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                )}
+                        </AnimatePresence>
+
+                        {/* =================================================
+                            INPUT
+                        ================================================== */}
+
+                        <form
+                            onSubmit={handleSubmit}
+                            className="
+                                flex
                                 shrink-0
+                                gap-2
+                                border-t
+                                border-slate-200
+                                bg-white
+                                p-3
+                            "
+                        >
+                            <div className="relative min-w-0 flex-1">
+                                <input
+                                    ref={inputRef}
+                                    value={input}
+                                    onChange={(event) =>
+                                        setInput(
+                                            event.target.value,
+                                        )
+                                    }
+                                    onKeyDown={
+                                        handleKeyDown
+                                    }
+                                    disabled={loading}
+                                    maxLength={1000}
+                                    autoComplete="off"
+                                    placeholder="Ask about my skills..."
+                                    className="
+                                        min-w-0
+                                        w-full
+                                        rounded-2xl
+                                        border
+                                        border-slate-200
+                                        bg-slate-50
+                                        px-4
+                                        py-3
+                                        pr-12
+                                        text-sm
+                                        text-slate-900
+                                        outline-none
+                                        transition
+                                        placeholder:text-slate-400
+                                        focus:border-sky-400
+                                        focus:bg-white
+                                        focus:ring-4
+                                        focus:ring-sky-400/10
+                                        disabled:cursor-not-allowed
+                                        disabled:opacity-60
+                                    "
+                                />
+
+                                {input.length > 0 && (
+                                    <span
+                                        className="
+                                            pointer-events-none
+                                            absolute
+                                            bottom-1.5
+                                            right-3
+                                            text-[9px]
+                                            text-slate-300
+                                        "
+                                    >
+                                        {input.length}/1000
+                                    </span>
+                                )}
+                            </div>
+
+                            <motion.button
+                                type="submit"
+                                disabled={
+                                    loading ||
+                                    !input.trim()
+                                }
+                                whileHover={
+                                    !loading &&
+                                    input.trim()
+                                        ? {
+                                              scale: 1.03,
+                                          }
+                                        : undefined
+                                }
+                                whileTap={
+                                    !loading &&
+                                    input.trim()
+                                        ? {
+                                              scale: 0.94,
+                                          }
+                                        : undefined
+                                }
+                                className="
+                                    flex
+                                    h-12
+                                    w-12
+                                    shrink-0
+                                    items-center
+                                    justify-center
+                                    self-center
+                                    rounded-2xl
+                                    bg-sky-500
+                                    text-white
+                                    shadow-lg
+                                    shadow-sky-500/20
+                                    transition
+                                    hover:bg-sky-400
+                                    disabled:cursor-not-allowed
+                                    disabled:opacity-40
+                                    disabled:shadow-none
+                                "
+                                aria-label="Send message"
+                            >
+                                {loading ? (
+                                    <motion.div
+                                        animate={{
+                                            rotate: 360,
+                                        }}
+                                        transition={{
+                                            duration: 1,
+                                            repeat: Infinity,
+                                            ease: "linear",
+                                        }}
+                                    >
+                                        <Sparkles className="h-4 w-4" />
+                                    </motion.div>
+                                ) : (
+                                    <Send className="h-4 w-4" />
+                                )}
+                            </motion.button>
+                        </form>
+
+                        {/* =================================================
+                            FOOTER STATUS
+                        ================================================== */}
+
+                        <div
+                            className="
+                                flex
+                                shrink-0
+                                items-center
+                                justify-center
+                                gap-1.5
                                 border-t
                                 border-slate-100
                                 bg-white
                                 px-4
-                                py-3
+                                py-2
+                                text-[9px]
+                                uppercase
+                                tracking-[0.14em]
+                                text-slate-300
                             "
                         >
-                            <div className="mb-2 flex items-center gap-2">
-                                <Sparkles className="h-3.5 w-3.5 text-sky-500" />
-
-                                <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
-                                    Try asking
-                                </span>
-                            </div>
-
-                            <div className="flex flex-wrap gap-2">
-                                {suggestions.map(
-                                    (suggestion) => (
-                                        <button
-                                            key={suggestion}
-                                            type="button"
-                                            onClick={() =>
-                                                void sendMessage(
-                                                    suggestion,
-                                                )
-                                            }
-                                            className="
-                                                rounded-full
-                                                border
-                                                border-slate-200
-                                                bg-slate-50
-                                                px-3
-                                                py-2
-                                                text-left
-                                                text-xs
-                                                font-medium
-                                                text-slate-600
-                                                transition
-                                                hover:border-sky-300
-                                                hover:bg-sky-50
-                                                hover:text-sky-600
-                                            "
-                                        >
-                                            {suggestion}
-                                        </button>
-                                    ),
-                                )}
-                            </div>
+                            <Check className="h-3 w-3 text-emerald-400" />
+                            AI portfolio assistant
                         </div>
-                    )}
-
-                    {/* =================================================
-                        INPUT
-                    ================================================== */}
-
-                    <form
-                        onSubmit={handleSubmit}
-                        className="
-                            flex
-                            shrink-0
-                            gap-2
-                            border-t
-                            border-slate-200
-                            bg-white
-                            p-3
-                        "
-                    >
-                        <input
-                            value={input}
-                            onChange={(event) =>
-                                setInput(event.target.value)
-                            }
-                            disabled={loading}
-                            maxLength={1000}
-                            placeholder="Ask about my skills..."
-                            className="
-                                min-w-0
-                                flex-1
-                                rounded-2xl
-                                border
-                                border-slate-200
-                                bg-slate-50
-                                px-4
-                                py-3
-                                text-sm
-                                text-slate-900
-                                outline-none
-                                transition
-                                placeholder:text-slate-400
-                                focus:border-sky-400
-                                focus:bg-white
-                                focus:ring-4
-                                focus:ring-sky-400/10
-                                disabled:cursor-not-allowed
-                                disabled:opacity-60
-                            "
-                        />
-
-                        <button
-                            type="submit"
-                            disabled={
-                                loading ||
-                                !input.trim()
-                            }
-                            className="
-                                flex
-                                h-12
-                                w-12
-                                shrink-0
-                                items-center
-                                justify-center
-                                rounded-2xl
-                                bg-sky-500
-                                text-white
-                                shadow-lg
-                                shadow-sky-500/20
-                                transition-all
-                                hover:bg-sky-400
-                                hover:shadow-sky-500/30
-                                active:scale-95
-                                disabled:cursor-not-allowed
-                                disabled:opacity-40
-                                disabled:shadow-none
-                            "
-                            aria-label="Send message"
-                        >
-                            <Send className="h-4 w-4" />
-                        </button>
-                    </form>
-                </div>
-            )}
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </>
     );
 }

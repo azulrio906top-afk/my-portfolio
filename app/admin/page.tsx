@@ -91,7 +91,7 @@ export default async function AdminPage() {
         profile,
         skills,
         projects,
-        experience,
+        experiences,
     ] = await Promise.all([
         loadProfile(),
         loadSkills(),
@@ -105,7 +105,7 @@ export default async function AdminPage() {
                 profile={profile}
                 skills={skills}
                 projects={projects}
-                experience={experience}
+                experiences={experiences}
                 updateProfileAction={updateProfile}
                 createSkillAction={createSkill}
                 updateSkillAction={updateSkill}
