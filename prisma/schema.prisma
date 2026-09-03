@@ -54,6 +54,8 @@ model Profile {
   id           Int      @id @default(autoincrement())
   name         String
   title        String
+  headline     String
+  bio          String? 
   email        String?
   location     String?
   summary      String

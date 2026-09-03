@@ -1,417 +1,536 @@
-import * as PrismaClientModule from "@prisma/client";
-import * as bcrypt from "bcryptjs";
 import {
-  ADMIN_EMAIL,
-  ADMIN_NAME,
-  ADMIN_PASSWORD,
-} from "@/lib/admin";
+    PrismaClient,
+} from '@prisma/client';
 
-const bcryptLib =
-  (
-    bcrypt as typeof import("bcryptjs") & {
-      default?: typeof import("bcryptjs");
-    }
-  ).default ?? bcrypt;
+import {
+    hash,
+} from 'bcryptjs';
 
-const PrismaClientCtor = (
-  PrismaClientModule as any
-).PrismaClient as new (
-  args?: Record<string, unknown>,
-) => any;
-
-const prisma = new PrismaClientCtor();
+const prisma = new PrismaClient();
 
 async function main() {
-  // --------------------------------------------------
-  // ADMIN USER
-  // --------------------------------------------------
+    console.log('🌱 Starting portfolio database seed...');
 
-  const existingAdmin =
-    await prisma.adminUser.findUnique({
-      where: {
-        email: ADMIN_EMAIL,
-      },
-    });
+    /*
+     * ============================================================
+     * ADMIN USER
+     * ============================================================
+     */
 
-  if (!existingAdmin) {
-    const passwordHash = await bcryptLib.hash(
-      ADMIN_PASSWORD,
-      10,
+    const passwordHash = await hash(
+        'ChangeMe123!',
+        12,
     );
 
-    await prisma.adminUser.create({
-      data: {
-        name: ADMIN_NAME,
-        email: ADMIN_EMAIL,
-        passwordHash,
-        role: "admin",
-      },
-    });
-
-    console.log(
-      `✅ Created admin user: ${ADMIN_EMAIL}`,
-    );
-  } else {
-    console.log(
-      `ℹ️ Admin user already exists: ${ADMIN_EMAIL}`,
-    );
-  }
-
-  // --------------------------------------------------
-  // PROFILE
-  // --------------------------------------------------
-
-  const existingProfile =
-    await prisma.profile.findFirst();
-
-  if (!existingProfile) {
-    await prisma.profile.create({
-      data: {
-        name: "Frunco Ruiz",
-        title: "Full-Stack Developer",
-        email: ADMIN_EMAIL,
-        location: "United States",
-        summary:
-          "Full-stack developer focused on building modern, responsive, scalable web applications with React, Next.js, TypeScript, Node.js, Prisma, PostgreSQL, and AI integrations.",
-        availability:
-          "Available for freelance and remote projects",
-      },
-    });
-
-    console.log(
-      "✅ Created portfolio profile",
-    );
-  } else {
-    console.log(
-      "ℹ️ Portfolio profile already exists",
-    );
-  }
-
-  // --------------------------------------------------
-  // SKILLS
-  // --------------------------------------------------
-
-  const skills = [
-    {
-      name: "Next.js",
-      category: "Frontend",
-      order: 1,
-    },
-    {
-      name: "React",
-      category: "Frontend",
-      order: 2,
-    },
-    {
-      name: "TypeScript",
-      category: "Frontend",
-      order: 3,
-    },
-    {
-      name: "Tailwind CSS",
-      category: "Frontend",
-      order: 4,
-    },
-    {
-      name: "JavaScript",
-      category: "Frontend",
-      order: 5,
-    },
-    {
-      name: "Node.js",
-      category: "Backend",
-      order: 6,
-    },
-    {
-      name: "Express",
-      category: "Backend",
-      order: 7,
-    },
-    {
-      name: "Prisma",
-      category: "Database",
-      order: 8,
-    },
-    {
-      name: "PostgreSQL",
-      category: "Database",
-      order: 9,
-    },
-    {
-      name: "Zustand",
-      category: "State Management",
-      order: 10,
-    },
-    {
-      name: "REST API",
-      category: "Backend",
-      order: 11,
-    },
-    {
-      name: "Git",
-      category: "Tools",
-      order: 12,
-    },
-    {
-      name: "GitHub",
-      category: "Tools",
-      order: 13,
-    },
-    {
-      name: "Docker",
-      category: "DevOps",
-      order: 14,
-    },
-    {
-      name: "AI Integration",
-      category: "AI",
-      order: 15,
-    },
-    {
-      name: "UI/UX Design",
-      category: "Design",
-      order: 16,
-    },
-    {
-      name: "Design Systems",
-      category: "Design",
-      order: 17,
-    },
-  ];
-
-  for (const skill of skills) {
-    await prisma.skill.upsert({
-      where: {
-        name: skill.name,
-      },
-      update: {
-        category: skill.category,
-        order: skill.order,
-        updatedAt: new Date(),
-      },
-      create: {
-        name: skill.name,
-        category: skill.category,
-        order: skill.order,
-      },
-    });
-  }
-
-  console.log(
-    `✅ Seeded ${skills.length} skills`,
-  );
-
-  // --------------------------------------------------
-  // PROJECTS
-  // --------------------------------------------------
-
-  const projects = [
-    {
-      title: "Luma Studio",
-      slug: "luma-studio",
-      summary:
-        "Story-first portfolio site for a boutique creative brand.",
-      description:
-        "A polished portfolio experience designed for a creative studio. The project focuses on strong visual presentation, responsive layouts, clear storytelling, and a simple content structure that makes the studio work easy for potential clients to explore.",
-      url: null,
-      githubUrl: null,
-      imageUrl:
-        "https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=1200&q=80",
-      featured: true,
-      status: "active",
-      tags: "PORTFOLIO,DESIGN,CMS",
-    },
-    {
-      title: "Pulse Analytics",
-      slug: "pulse-analytics",
-      summary:
-        "Executive reporting suite for marketing and growth teams.",
-      description:
-        "A business analytics dashboard focused on making marketing and growth data easier to understand. The interface brings important metrics, reports, and business insights into a clean dashboard experience designed for fast decision making.",
-      url: null,
-      githubUrl: null,
-      imageUrl:
-        "https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=1200&q=80",
-      featured: true,
-      status: "active",
-      tags: "DASHBOARD,SAAS,DATA",
-    },
-    {
-      title: "Northstar Commerce",
-      slug: "northstar-commerce",
-      summary:
-        "B2B marketplace redesign focused on conversion, trust, and customer expansion.",
-      description:
-        "A modern B2B commerce experience focused on improving usability and conversion. The project emphasizes clear product discovery, trustworthy presentation, responsive interfaces, and a scalable frontend architecture.",
-      url: null,
-      githubUrl: null,
-      imageUrl:
-        "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=1200&q=80",
-      featured: true,
-      status: "active",
-      tags: "NEXT.JS,COMMERCE,UX",
-    },
-    {
-      title: "AI Portfolio Assistant",
-      slug: "ai-portfolio-assistant",
-      summary:
-        "AI-powered assistant that helps potential clients understand a developer portfolio.",
-      description:
-        "An AI-powered portfolio assistant that answers questions about skills, projects, professional experience, and services. The assistant combines a Next.js interface, a server-side API route, Prisma, PostgreSQL, and OpenAI to provide potential clients with a conversational way to learn about the developer.",
-      url: null,
-      githubUrl: null,
-      imageUrl:
-        "https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=1200&q=80",
-      featured: true,
-      status: "active",
-      tags: "AI,NEXT.JS,OPENAI,PRISMA",
-    },
-    {
-      title: "Business Dashboard",
-      slug: "business-dashboard",
-      summary:
-        "Responsive internal dashboard for business reporting and workflow management.",
-      description:
-        "A responsive business dashboard designed to organize reporting, operational information, and workflow data in one place. The interface prioritizes clarity, responsive behavior, and maintainable component architecture.",
-      url: null,
-      githubUrl: null,
-      imageUrl:
-        "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&q=80",
-      featured: false,
-      status: "active",
-      tags: "REACT,DASHBOARD,ANALYTICS",
-    },
-  ];
-
-  for (const project of projects) {
-    await prisma.project.upsert({
-      where: {
-        slug: project.slug,
-      },
-      update: {
-        title: project.title,
-        summary: project.summary,
-        description: project.description,
-        url: project.url,
-        githubUrl: project.githubUrl,
-        imageUrl: project.imageUrl,
-        featured: project.featured,
-        status: project.status,
-        tags: project.tags,
-        updatedAt: new Date(),
-      },
-      create: {
-        title: project.title,
-        slug: project.slug,
-        summary: project.summary,
-        description: project.description,
-        url: project.url,
-        githubUrl: project.githubUrl,
-        imageUrl: project.imageUrl,
-        featured: project.featured,
-        status: project.status,
-        tags: project.tags,
-      },
-    });
-  }
-
-  console.log(
-    `✅ Seeded ${projects.length} projects`,
-  );
-
-  // --------------------------------------------------
-  // EXPERIENCE
-  // --------------------------------------------------
-
-  const experiences = [
-    {
-      company: "Freelance",
-      position: "Full-Stack Developer",
-      startDate: "2024",
-      endDate: null,
-      description:
-        "Building modern web applications, portfolio platforms, dashboards, REST APIs, and AI-powered experiences for clients and personal projects.",
-      technologies:
-        "Next.js,React,TypeScript,Node.js,Express,Prisma,PostgreSQL,Tailwind CSS,AI",
-      current: true,
-    },
-  ];
-
-  for (const experience of experiences) {
-    const existingExperience =
-      await prisma.experience.findFirst({
+    const admin = await prisma.adminUser.upsert({
         where: {
-          company: experience.company,
-          position: experience.position,
+            email: 'admin@flunco.dev',
         },
-      });
+        update: {
+            name: 'Flunco Ruiz',
+            passwordHash,
+            role: 'admin',
+        },
+        create: {
+            name: 'Flunco Ruiz',
+            email: 'admin@flunco.dev',
+            passwordHash,
+            role: 'admin',
+        },
+    });
 
-    if (!existingExperience) {
-      await prisma.experience.create({
-        data: experience,
-      });
+    console.log(`✓ Admin: ${admin.email}`);
+
+    /*
+     * ============================================================
+     * PROFILE
+     * ============================================================
+     */
+
+    const existingProfile = await prisma.profile.findFirst();
+
+    const profileData = {
+        name: 'Flunco Ruiz',
+
+        title: 'Full-Stack Developer & Product Designer',
+
+        headline:
+            'I build digital products that move businesses forward.',
+
+        bio:
+            'Full-stack developer and product designer helping startups and growing businesses turn ideas into fast, elegant and production-ready software.',
+
+        email:
+            'azulrio906top@gmail.com',
+
+        location:
+            'United States',
+
+        summary:
+            'I design and build modern web applications, SaaS products, dashboards and AI-powered experiences with a focus on performance, usability and maintainability.',
+
+        availability:
+            'Available for selected freelance projects',
+    };
+
+    let profile;
+
+    if (existingProfile) {
+        profile = await prisma.profile.update({
+            where: {
+                id: existingProfile.id,
+            },
+            data: profileData,
+        });
+    } else {
+        profile = await prisma.profile.create({
+            data: profileData,
+        });
     }
-  }
 
-  console.log(
-    `✅ Seeded ${experiences.length} experience records`,
-  );
+    console.log(`✓ Profile: ${profile.name}`);
 
-  // --------------------------------------------------
-  // SUMMARY
-  // --------------------------------------------------
+    /*
+     * ============================================================
+     * SKILLS
+     * ============================================================
+     *
+     * Skill.name is unique, so upsert by name is SQLite-safe.
+     */
 
-  const skillCount =
-    await prisma.skill.count();
+    const skills = [
+        {
+            name: 'React',
+            category: 'frontend',
+            order: 1,
+        },
+        {
+            name: 'Next.js',
+            category: 'frontend',
+            order: 2,
+        },
+        {
+            name: 'TypeScript',
+            category: 'frontend',
+            order: 3,
+        },
+        {
+            name: 'JavaScript',
+            category: 'frontend',
+            order: 4,
+        },
+        {
+            name: 'Tailwind CSS',
+            category: 'frontend',
+            order: 5,
+        },
+        {
+            name: 'HTML',
+            category: 'frontend',
+            order: 6,
+        },
+        {
+            name: 'CSS',
+            category: 'frontend',
+            order: 7,
+        },
+        {
+            name: 'Zustand',
+            category: 'frontend',
+            order: 8,
+        },
 
-  const projectCount =
-    await prisma.project.count();
+        {
+            name: 'Node.js',
+            category: 'backend',
+            order: 1,
+        },
+        {
+            name: 'Express',
+            category: 'backend',
+            order: 2,
+        },
+        {
+            name: 'REST APIs',
+            category: 'backend',
+            order: 3,
+        },
+        {
+            name: 'Authentication',
+            category: 'backend',
+            order: 4,
+        },
 
-  const adminCount =
-    await prisma.adminUser.count();
+        {
+            name: 'PostgreSQL',
+            category: 'data',
+            order: 1,
+        },
+        {
+            name: 'SQLite',
+            category: 'data',
+            order: 2,
+        },
+        {
+            name: 'MongoDB',
+            category: 'data',
+            order: 3,
+        },
+        {
+            name: 'Prisma',
+            category: 'data',
+            order: 4,
+        },
+        {
+            name: 'Redis',
+            category: 'data',
+            order: 5,
+        },
 
-  const profileCount =
-    await prisma.profile.count();
+        {
+            name: 'AI Integration',
+            category: 'ai',
+            order: 1,
+        },
+        {
+            name: 'AI Assistants',
+            category: 'ai',
+            order: 2,
+        },
+        {
+            name: 'LLM Integration',
+            category: 'ai',
+            order: 3,
+        },
+        {
+            name: 'AI Automation',
+            category: 'ai',
+            order: 4,
+        },
 
-  const experienceCount =
-    await prisma.experience.count();
+        {
+            name: 'Git',
+            category: 'tools',
+            order: 1,
+        },
+        {
+            name: 'Docker',
+            category: 'tools',
+            order: 2,
+        },
+        {
+            name: 'Vitest',
+            category: 'tools',
+            order: 3,
+        },
+    ];
 
-  console.log("");
-  console.log(
-    "================================",
-  );
-  console.log(
-    "🎉 DATABASE SEED COMPLETE",
-  );
-  console.log(
-    "================================",
-  );
-  console.log(
-    `Profile:     ${profileCount}`,
-  );
-  console.log(
-    `Experience:  ${experienceCount}`,
-  );
-  console.log(
-    `Skills:      ${skillCount}`,
-  );
-  console.log(
-    `Projects:    ${projectCount}`,
-  );
-  console.log(
-    `Admins:      ${adminCount}`,
-  );
-  console.log(
-    "================================",
-  );
+    for (const skill of skills) {
+        await prisma.skill.upsert({
+            where: {
+                name: skill.name,
+            },
+            update: {
+                category: skill.category,
+                order: skill.order,
+            },
+            create: {
+                name: skill.name,
+                category: skill.category,
+                order: skill.order,
+            },
+        });
+    }
+
+    console.log(`✓ Skills: ${skills.length}`);
+
+    /*
+     * ============================================================
+     * PROJECTS
+     * ============================================================
+     *
+     * Project.slug is unique, so it is the natural upsert key.
+     */
+
+    const projects = [
+        {
+            title: 'AI Portfolio Assistant',
+            slug: 'ai-portfolio-assistant',
+
+            summary:
+                'An AI-powered portfolio assistant that answers questions about skills, projects and experience.',
+
+            description:
+                'A conversational portfolio experience designed to help potential clients quickly understand a developer’s background, technical strengths and previous work. The assistant combines a polished chat interface with a backend API and portfolio-aware responses.',
+
+            url: null,
+            githubUrl: null,
+
+            imageUrl:
+                'https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=1400&q=85',
+
+            featured: true,
+            status: 'featured',
+
+            tags:
+                'Next.js, TypeScript, React, AI, API, Tailwind CSS',
+        },
+
+        {
+            title: 'SaaS Dashboard',
+            slug: 'saas-dashboard',
+
+            summary:
+                'A modern SaaS dashboard for monitoring business metrics, workflows and operational data.',
+
+            description:
+                'A responsive business dashboard focused on clear information architecture, fast interactions and reusable interface components. Designed to make complex business data easier to understand and act upon.',
+
+            url: null,
+            githubUrl: null,
+
+            imageUrl:
+                'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1400&q=85',
+
+            featured: false,
+            status: 'active',
+
+            tags:
+                'React, TypeScript, Dashboard, Analytics, Tailwind CSS',
+        },
+
+        {
+            title: 'Business Management Platform',
+            slug: 'business-management-platform',
+
+            summary:
+                'A full-stack application for managing customers, projects, workflows and business operations.',
+
+            description:
+                'A production-oriented business application built around structured workflows, authentication, database persistence and a clean administrative experience. The architecture emphasizes maintainability and room for future growth.',
+
+            url: null,
+            githubUrl: null,
+
+            imageUrl:
+                'https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=1400&q=85',
+
+            featured: false,
+            status: 'active',
+
+            tags:
+                'Next.js, Node.js, Prisma, SQLite, REST API',
+        },
+
+        {
+            title: 'Developer Portfolio',
+            slug: 'developer-portfolio',
+
+            summary:
+                'A polished personal portfolio combining project discovery, technical skills and AI-assisted communication.',
+
+            description:
+                'A responsive developer portfolio built to present technical capabilities and professional work through a focused visual experience. It includes dynamic project and skill data, theme switching, responsive navigation and an integrated AI assistant.',
+
+            url: null,
+            githubUrl: null,
+
+            imageUrl:
+                'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1400&q=85',
+
+            featured: false,
+            status: 'active',
+
+            tags:
+                'Next.js, React, TypeScript, Tailwind CSS, AI',
+        },
+
+        {
+            title: 'AI Workflow Automation',
+            slug: 'ai-workflow-automation',
+
+            summary:
+                'An intelligent workflow concept for automating repetitive business tasks with AI.',
+
+            description:
+                'An automation-focused product concept that combines structured business workflows with AI-assisted processing. The goal is to reduce repetitive manual work while keeping humans in control of important decisions.',
+
+            url: null,
+            githubUrl: null,
+
+            imageUrl:
+                'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1400&q=85',
+
+            featured: false,
+            status: 'active',
+
+            tags:
+                'AI, Automation, Node.js, APIs, SaaS',
+        },
+    ];
+
+    for (const project of projects) {
+        await prisma.project.upsert({
+            where: {
+                slug: project.slug,
+            },
+            update: {
+                title: project.title,
+                summary: project.summary,
+                description: project.description,
+                url: project.url,
+                githubUrl: project.githubUrl,
+                imageUrl: project.imageUrl,
+                featured: project.featured,
+                status: project.status,
+                tags: project.tags,
+            },
+            create: {
+                title: project.title,
+                slug: project.slug,
+                summary: project.summary,
+                description: project.description,
+                url: project.url,
+                githubUrl: project.githubUrl,
+                imageUrl: project.imageUrl,
+                featured: project.featured,
+                status: project.status,
+                tags: project.tags,
+            },
+        });
+    }
+
+    console.log(`✓ Projects: ${projects.length}`);
+
+    /*
+     * ============================================================
+     * EXPERIENCE
+     * ============================================================
+     *
+     * IMPORTANT:
+     * startDate and endDate are String fields in your schema.
+     *
+     * Therefore:
+     *
+     *     startDate: '2020-01-01'
+     *
+     * NOT:
+     *
+     *     startDate: new Date(...)
+     */
+
+    const experiences = [
+        {
+            company: 'Independent / Freelance',
+            position: 'Full-Stack Developer & Product Designer',
+
+            startDate: '2020-01-01',
+            endDate: null,
+
+            description:
+                'Designing and building modern web applications, SaaS products, dashboards and AI-powered experiences for startups, businesses and individual clients. Responsible for product thinking, architecture, implementation and delivery.',
+
+            technologies:
+                'React, Next.js, TypeScript, Node.js, Express, Prisma, PostgreSQL, SQLite, Tailwind CSS, AI',
+
+            current: true,
+        },
+
+        {
+            company: 'Personal Product Development',
+            position: 'Software Engineer',
+
+            startDate: '2018-01-01',
+            endDate: '2019-12-31',
+
+            description:
+                'Built software projects to develop strong foundations in application architecture, frontend development, backend development, databases and API design.',
+
+            technologies:
+                'JavaScript, React, Node.js, Express, SQL, Git',
+
+            current: false,
+        },
+    ];
+
+    /*
+     * Experience has no unique field in the schema.
+     *
+     * Therefore we cannot use a normal Prisma upsert safely.
+     *
+     * Instead, we use a deterministic lookup based on
+     * company + position + startDate.
+     */
+
+    for (const experience of experiences) {
+        const existing = await prisma.experience.findFirst({
+            where: {
+                company: experience.company,
+                position: experience.position,
+                startDate: experience.startDate,
+            },
+        });
+
+        if (existing) {
+            await prisma.experience.update({
+                where: {
+                    id: existing.id,
+                },
+                data: {
+                    endDate: experience.endDate,
+                    description: experience.description,
+                    technologies:
+                        experience.technologies,
+                    current: experience.current,
+                },
+            });
+        } else {
+            await prisma.experience.create({
+                data: experience,
+            });
+        }
+    }
+
+    console.log(`✓ Experience: ${experiences.length}`);
+
+    /*
+     * ============================================================
+     * SUMMARY
+     * ============================================================
+     */
+
+    const [
+        skillCount,
+        projectCount,
+        experienceCount,
+        profileCount,
+        adminCount,
+    ] = await Promise.all([
+        prisma.skill.count(),
+        prisma.project.count(),
+        prisma.experience.count(),
+        prisma.profile.count(),
+        prisma.adminUser.count(),
+    ]);
+
+    console.log('');
+    console.log('========================================');
+    console.log('🌱 Portfolio seed completed');
+    console.log('========================================');
+    console.log(`Admin users:  ${adminCount}`);
+    console.log(`Profiles:     ${profileCount}`);
+    console.log(`Skills:       ${skillCount}`);
+    console.log(`Projects:     ${projectCount}`);
+    console.log(`Experience:   ${experienceCount}`);
+    console.log('========================================');
 }
 
 main()
-  .catch((error) => {
-    console.error("❌ Seed failed:");
-    console.error(error);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+    .catch((error) => {
+        console.error('❌ Seed failed:', error);
+
+        process.exit(1);
+    })
+    .finally(async () => {
+        await prisma.$disconnect();
+    });
