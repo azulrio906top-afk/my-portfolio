@@ -1,0 +1,386 @@
+        </section>
+    );
+}
+
+/* =========================================================
+   EXPERIENCE VIEW
+========================================================= */
+
+function ExperienceView({
+    dark,
+    experiences,
+    createAction,
+    updateAction,
+    deleteAction,
+    runAction,
+}: {
+    dark: boolean;
+    experiences: Experience[];
+    createAction?: (
+        formData: FormData,
+    ) => Promise<unknown>;
+    updateAction?: (
+        formData: FormData,
+    ) => Promise<unknown>;
+    deleteAction?: (
+        formData: FormData,
+    ) => Promise<unknown>;
+    runAction: (
+        action:
+            | ((formData: FormData) => Promise<unknown>)
+            | undefined,
+        formData: FormData,
+        successText: string,
+    ) => Promise<void>;
+}) {
+    const [showCreate, setShowCreate] =
+        useState(false);
+
+    return (
+        <section>
+            <PageHeader
+                dark={dark}
+                eyebrow="Career"
+                title="Experience"
+                description="Manage your professional history and career timeline."
+                count={`${experiences.length} entries`}
+            />
+
+            <div className="mb-6 flex justify-end">
+                <button
+                    type="button"
+                    onClick={() =>
+                        setShowCreate(
+                            !showCreate,
+                        )
+                    }
+                    className="
+                        inline-flex
+                        items-center
+                        gap-2
+                        rounded-xl
+                        bg-blue-600
+                        px-5 py-3
+                        text-xs font-bold
+                        text-white
+                        shadow-lg
+                        shadow-blue-600/15
+                    "
+                >
+                    <Plus className="h-4 w-4" />
+                    Add experience
+                </button>
+            </div>
+
+            {showCreate && (
+                <ExperienceForm
+                    dark={dark}
+                    create
+                    action={createAction}
+                    onSubmit={(formData) => {
+                        void runAction(
+                            createAction,
+                            formData,
+                            "Experience created successfully.",
+                        );
+
+                        setShowCreate(false);
+                    }}
+                />
+            )}
+
+            {experiences.length === 0 ? (
+                <div
+                    className={`
+                        rounded-3xl border
+                        ${
+                            dark
+                                ? "border-slate-800 bg-[#0c1524]"
+                                : "border-slate-200 bg-white"
+                        }
+                    `}
+                >
+                    <EmptyState
+                        dark={dark}
+                        icon={BriefcaseBusiness}
+                        title="No experience yet"
+                        description="Add your professional history to make your portfolio more complete."
+                    />
+                </div>
+            ) : (
+                <div className="space-y-4">
+                    {experiences.map(
+                        (experience) => (
+                            <ExperienceForm
+                                key={
+                                    experience.id
+                                }
+                                dark={dark}
+                                experience={
+                                    experience
+                                }
+                                action={
+                                    updateAction
+                                }
+                                deleteAction={
+                                    deleteAction
+                                }
+                                onSubmit={(
+                                    formData,
+                                ) => {
+                                    void runAction(
+                                        updateAction,
+                                        formData,
+                                        "Experience updated successfully.",
+                                    );
+                                }}
+                                onDelete={(
+                                    formData,
+                                ) => {
+                                    if (
+                                        window.confirm(
+                                            `Delete ${experience.position} at ${experience.company}?`,
+                                        )
+                                    ) {
+                                        void runAction(
+                                            deleteAction,
+                                            formData,
+                                            "Experience deleted successfully.",
+                                        );
+                                    }
+                                }}
+                            />
+                        ),
+                    )}
+                </div>
+            )}
+        </section>
+    );
+}
+
+/* =========================================================
+   EXPERIENCE FORM
+========================================================= */
+
+function ExperienceForm({
+    dark,
+    experience,
+    create,
+    action,
+    deleteAction,
+    onSubmit,
+    onDelete,
+}: {
+    dark: boolean;
+    experience?: Experience;
+    create?: boolean;
+    action?: (
+        formData: FormData,
+    ) => Promise<unknown>;
+    deleteAction?: (
+        formData: FormData,
+    ) => Promise<unknown>;
+    onSubmit: (
+        formData: FormData,
+    ) => void;
+    onDelete?: (
+        formData: FormData,
+    ) => void;
+}) {
+    return (
+        <form
+            onSubmit={(event) => {
+                event.preventDefault();
+
+                onSubmit(
+                    new FormData(
+                        event.currentTarget,
+                    ),
+                );
+            }}
+            className={`
+                rounded-3xl border p-6
+                ${
+                    dark
+                        ? "border-slate-800 bg-[#0c1524]"
+                        : "border-slate-200 bg-white"
+                }
+            `}
+        >
+            {experience && (
+                <input
+                    type="hidden"
+                    name="id"
+                    value={experience.id}
+                />
+            )}
+
+            <div className="mb-6 flex items-start gap-4">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+                    <BriefcaseBusiness className="h-5 w-5" />
+                </div>
+
+                <div className="flex-1">
+                    <h2 className="text-sm font-bold">
+                        {create
+                            ? "New experience"
+                            : experience?.position}
+                    </h2>
+
+                    <p className="mt-1 text-xs text-slate-500">
+                        {create
+                            ? "Add a role to your career history."
+                            : experience?.company}
+                    </p>
+                </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+                <FormField
+                    label="Company"
+                    name="company"
+                    defaultValue={
+                        experience?.company ??
+                        ""
+                    }
+                    placeholder="Company name"
+                    dark={dark}
+                />
+
+                <FormField
+                    label="Position"
+                    name="position"
+                    defaultValue={
+                        experience?.position ??
+                        ""
+                    }
+                    placeholder="Senior Developer"
+                    dark={dark}
+                />
+
+                <FormField
+                    label="Location"
+                    name="location"
+                    defaultValue={
+                        experience?.location ??
+                        ""
+                    }
+                    placeholder="Remote"
+                    dark={dark}
+                />
+
+                <FormField
+                    label="Start date"
+                    name="startDate"
+                    defaultValue={
+                        experience?.startDate ??
+                        ""
+                    }
+                    placeholder="Jan 2024"
+                    dark={dark}
+                />
+
+                <FormField
+                    label="End date"
+                    name="endDate"
+                    defaultValue={
+                        experience?.endDate ??
+                        ""
+                    }
+                    placeholder="Present"
+                    dark={dark}
+                />
+
+                <div className="md:col-span-2">
+                    <label className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        Description
+                    </label>
+
+                    <textarea
+                        name="description"
+                        defaultValue={
+                            experience?.description ??
+                            ""
+                        }
+                        rows={6}
+                        placeholder="Describe your responsibilities and achievements..."
+                        className="admin-input w-full resize-none"
+                    />
+                </div>
+            </div>
+
+            <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                {experience &&
+                    deleteAction &&
+                    onDelete && (
+                        <button
+                            type="button"
+                            onClick={(event) => {
+                                const form =
+                                    event
+                                        .currentTarget
+                                        .form;
+
+                                if (!form)
+                                    return;
+
+                                onDelete(
+                                    new FormData(
+                                        form,
+                                    ),
+                                );
+                            }}
+                            className="
+                                inline-flex
+                                items-center
+                                justify-center
+                                gap-2
+                                rounded-xl
+                                bg-slate-900
+                                px-4 py-2.5
+                                text-xs font-semibold
+                                text-white
+                                hover:bg-red-600
+                            "
+                        >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            Delete
+                        </button>
+                    )}
+
+                <button
+                    type="submit"
+                    className="
+                        inline-flex
+                        items-center
+                        justify-center
+                        gap-2
+                        rounded-xl
+                        bg-blue-600
+                        px-5 py-2.5
+                        text-xs font-bold
+                        text-white
+                    "
+                >
+                    <Check className="h-3.5 w-3.5" />
+                    {create
+                        ? "Create experience"
+                        : "Save changes"}
+                </button>
+            </div>
+        </form>
+    );
+}
+
+/* =========================================================
+   AI ASSISTANT
+========================================================= */
+
+function AssistantView({
+    dark,
+}: {
+    dark: boolean;
+}) {
+    return (
+        <section>
+            <PageHeader

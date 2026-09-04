@@ -466,7 +466,7 @@ export async function updateProject(
                 "Project description is required.",
         };
     }
-
+``
     try {
         // There should be exactly one featured build on the public portfolio.
         // Clear the previous featured flag first, then save the selected project.

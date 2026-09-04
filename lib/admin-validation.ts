@@ -134,6 +134,8 @@ export const profileUpdateSchema = z.object({
 
 export const experienceCreateSchema =
     z.object({
+        name: z.string().trim().max(200).default(""),
+
         company: z
             .string()
             .trim()
@@ -145,6 +147,8 @@ export const experienceCreateSchema =
             .trim()
             .min(1)
             .max(200),
+
+        location: z.string().trim().max(200).optional().nullable(),
 
         startDate: z
             .string()

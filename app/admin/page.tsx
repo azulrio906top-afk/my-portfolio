@@ -18,6 +18,34 @@ import {
     updateSkill,
 } from "./actions";
 
+type AdminSkill = {
+    id: number;
+    name: string;
+    category: string;
+    order: number;
+};
+
+type AdminProjectSkill = {
+    id: number;
+    name: string;
+    category: string;
+};
+
+type AdminProject = {
+    id: number;
+    title: string;
+    slug: string;
+    status: string;
+    summary: string;
+    description: string;
+    url: string | null;
+    githubUrl: string | null;
+    imageUrl: string | null;
+    tags: string;
+    featured: boolean;
+    skills: AdminProjectSkill[];
+};
+
 function isMissingTableError(error: unknown): boolean {
     return (
         typeof error === "object" &&
@@ -43,7 +71,7 @@ async function loadProfile() {
     }
 }
 
-async function loadSkills() {
+async function loadSkills(): Promise<AdminSkill[]> {
     try {
         return await prisma.skill.findMany({
             orderBy: {
@@ -59,18 +87,73 @@ async function loadSkills() {
     }
 }
 
-async function loadProjects() {
+
+type ProjectSkillRow = {
+    id: number;
+    name: string;
+    category: string;
+};
+
+type ProjectRow = {
+    id: number;
+    title: string;
+    slug: string;
+    status: string;
+    summary: string;
+    description: string;
+    url: string | null;
+    githubUrl: string | null;
+    imageUrl: string | null;
+    tags: string;
+    featured: boolean;
+    projectSkills: Array<{
+        skill: ProjectSkillRow;
+    }>;
+};
+
+async function loadProjects(): Promise<AdminProject[]> {
     try {
-        return await prisma.project.findMany({
-            orderBy: {
-                createdAt: "desc",
-            },
-            include: {
-                projectSkills: {
-                    include: { skill: true },
+        const rows =
+            (await prisma.project.findMany({
+                orderBy: {
+                    createdAt: "desc",
                 },
-            },
-        });
+                include: {
+                    projectSkills: {
+                        include: {
+                            skill: true,
+                        },
+                    },
+                },
+            })) as ProjectRow[];
+
+        return rows.map(
+            (project: ProjectRow): AdminProject => ({
+                id: project.id,
+                title: project.title,
+                slug: project.slug,
+                status: project.status,
+                summary: project.summary,
+                description: project.description,
+                url: project.url,
+                githubUrl: project.githubUrl,
+                imageUrl: project.imageUrl,
+                tags: project.tags,
+                featured: project.featured,
+
+                skills: project.projectSkills.map(
+                    ({
+                        skill,
+                    }: {
+                        skill: ProjectSkillRow;
+                    }): AdminProjectSkill => ({
+                        id: skill.id,
+                        name: skill.name,
+                        category: skill.category,
+                    })
+                ),
+            })
+        );
     } catch (error) {
         if (isMissingTableError(error)) {
             return [];
@@ -122,10 +205,7 @@ export default async function AdminPage() {
             <AdminDashboard
                 profile={profile}
                 skills={skills}
-                projects={projects.map((project) => ({
-                    ...project,
-                    skills: project.projectSkills.map(({ skill }) => skill),
-                }))}
+                projects={projects}
                 experiences={experiences}
                 updateProfileAction={updateProfile}
                 createSkillAction={createSkill}

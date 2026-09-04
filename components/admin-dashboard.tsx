@@ -70,12 +70,15 @@ type Project = {
 
 type Experience = {
     id: number;
+    name: string;
     company: string;
     position: string;
     location?: string | null;
     startDate?: string | null;
     endDate?: string | null;
     description?: string | null;
+    technologies: string;
+    current: boolean;
 };
 
 type Profile = {
@@ -3118,7 +3121,7 @@ function ExperienceView({
                                 ) => {
                                     if (
                                         window.confirm(
-                                            `Delete ${experience.position} at ${experience.company}?`,
+                                            `Delete ${experience.name || experience.position} at ${experience.company}?`,
                                         )
                                     ) {
                                         void runAction(
@@ -3203,7 +3206,7 @@ function ExperienceForm({
                     <h2 className="text-sm font-bold">
                         {create
                             ? "New experience"
-                            : experience?.position}
+                            : experience?.name || experience?.position}
                     </h2>
 
                     <p className="mt-1 text-xs text-slate-500">
@@ -3215,6 +3218,14 @@ function ExperienceForm({
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
+                <FormField
+                    label="Experience name"
+                    name="name"
+                    defaultValue={experience?.name ?? ""}
+                    placeholder="Frontend Developer — Company"
+                    dark={dark}
+                />
+
                 <FormField
                     label="Company"
                     name="company"

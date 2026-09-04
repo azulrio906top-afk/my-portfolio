@@ -68,8 +68,10 @@ model Profile {
 
 model Experience {
   id           Int      @id @default(autoincrement())
+  name         String   @default("")
   company      String
   position     String
+  location     String?
   startDate    String
   endDate      String?
   description  String

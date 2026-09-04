@@ -52,10 +52,31 @@ export default async function HomePage() {
   return (
     <PortfolioLanding
       profile={profile ?? fallbackProfile}
-      skillList={skills.length ? skills : fallbackSkills}
-      projectList={projects.map((project) => ({
-        ...project,
-        skills: project.projectSkills.map(({ skill }) => skill),
+      skillList={skills.length
+        ? skills.map((skill: typeof skills[number]) => ({
+            id: skill.id,
+            name: skill.name,
+            category: skill.category,
+          }))
+        : fallbackSkills}
+      projectList={projects.map((project: typeof projects[number]) => ({
+        id: project.id,
+        slug: project.slug,
+        title: project.title,
+        summary: project.summary,
+        status: project.status,
+        featured: project.featured,
+        url: project.url,
+        githubUrl: project.githubUrl,
+        imageUrl: project.imageUrl,
+        tags: project.tags,
+        skills: project.projectSkills.map(
+            ({ skill }: (typeof project.projectSkills)[number]) => ({
+              id: skill.id,
+              name: skill.name,
+              category: skill.category,
+            })
+          ),
       }))}
     />
   );

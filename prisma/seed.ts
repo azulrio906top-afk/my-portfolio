@@ -534,11 +534,17 @@ async function main() {
 
     const experiences = [
         {
+            name:
+                "Full-Stack Developer & Product Designer",
+
             company:
                 "Independent / Freelance",
 
             position:
                 "Full-Stack Developer & Product Designer",
+
+            location:
+                "Remote",
 
             startDate:
                 "2023-01",
@@ -556,11 +562,17 @@ async function main() {
         },
 
         {
+            name:
+                "Full-Stack Developer — Product Development",
+
             company:
                 "Product Development",
 
             position:
                 "Full-Stack Developer",
+
+            location:
+                "Remote",
 
             startDate:
                 "2021-01",
@@ -578,11 +590,17 @@ async function main() {
         },
 
         {
+            name:
+                "Frontend Developer — Software Development",
+
             company:
                 "Software Development",
 
             position:
                 "Frontend Developer",
+
+            location:
+                "Remote",
 
             startDate:
                 "2019-01",
@@ -631,6 +649,12 @@ async function main() {
                 },
 
                 data: {
+                    name:
+                        experience.name,
+
+                    location:
+                        experience.location ?? null,
+
                     endDate:
                         experience.endDate,
 
@@ -647,8 +671,14 @@ async function main() {
         } else {
             await prisma.experience.create({
                 data: {
+                    name:
+                        experience.name,
+
                     company:
                         experience.company,
+
+                    location:
+                        experience.location ?? null,
 
                     position:
                         experience.position,
