@@ -3,6 +3,7 @@
 import {
     FormEvent,
     KeyboardEvent,
+    useCallback,
     useEffect,
     useRef,
     useState,
@@ -21,6 +22,8 @@ import {
     ThumbsUp,
     X,
 } from "lucide-react";
+
+import { useChatbotStore } from "@/lib/chatbot-store";
 
 /*
 |--------------------------------------------------------------------------
@@ -42,6 +45,8 @@ type ChatHistoryItem = {
     content: string;
 };
 
+type FeedbackValue = "up" | "down";
+
 /*
 |--------------------------------------------------------------------------
 | Configuration
@@ -52,6 +57,7 @@ const CLYDE_IMAGE =
     "https://cdn.prod.website-files.com/6257adef93867e50d84d30e2/6707a0ea5ddb44cae1dd6b29_clyde_pose_02%201.webp";
 
 const MAX_MESSAGE_LENGTH = 1000;
+const MAX_HISTORY_MESSAGES = 20;
 
 const suggestions = [
     "What are your main skills?",
@@ -112,6 +118,8 @@ function BotAvatar({
                 src={CLYDE_IMAGE}
                 alt="Portfolio AI assistant"
                 className="h-full w-full object-contain"
+                loading="eager"
+                draggable={false}
             />
 
             {showOnline && (
@@ -143,7 +151,11 @@ function BotAvatar({
 
 function TypingIndicator() {
     return (
-        <div className="flex items-end gap-2">
+        <div
+            className="flex items-end gap-2"
+            aria-live="polite"
+            aria-label="Assistant is typing"
+        >
             <BotAvatar size="sm" />
 
             <div
@@ -157,7 +169,6 @@ function TypingIndicator() {
                     py-3
                     shadow-sm
                 "
-                aria-label="Assistant is typing"
             >
                 <div className="flex items-center gap-1.5">
                     {[0, 120, 240].map((delay) => (
@@ -188,12 +199,77 @@ function TypingIndicator() {
 
 /*
 |--------------------------------------------------------------------------
-| Assistant Message Renderer
+| Inline Assistant Text Renderer
 |--------------------------------------------------------------------------
 |
-| Lightweight Markdown-style rendering.
-| This avoids adding another dependency.
-|
+| Supports:
+| - **bold**
+| - URLs
+|--------------------------------------------------------------------------
+*/
+
+function renderInlineText(text: string) {
+    const parts = text.split(
+        /(https?:\/\/[^\s]+|\*\*[^*]+\*\*)/g,
+    );
+
+    return parts.map((part, index) => {
+        if (
+            part.startsWith("http://") ||
+            part.startsWith("https://")
+        ) {
+            const cleanUrl = part.replace(
+                /[),.!?]+$/,
+                "",
+            );
+
+            return (
+                <a
+                    key={index}
+                    href={cleanUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="
+                        font-medium
+                        text-sky-500
+                        underline
+                        underline-offset-2
+                        transition-colors
+                        hover:text-sky-600
+                    "
+                >
+                    {cleanUrl}
+                </a>
+            );
+        }
+
+        if (
+            part.startsWith("**") &&
+            part.endsWith("**") &&
+            part.length >= 4
+        ) {
+            return (
+                <strong
+                    key={index}
+                    className="font-semibold text-slate-900"
+                >
+                    {part.slice(2, -2)}
+                </strong>
+            );
+        }
+
+        return (
+            <span key={index}>
+                {part}
+            </span>
+        );
+    });
+}
+
+/*
+|--------------------------------------------------------------------------
+| Assistant Message Renderer
+|--------------------------------------------------------------------------
 */
 
 function renderAssistantContent(content: string) {
@@ -207,12 +283,13 @@ function renderAssistantContent(content: string) {
                 <div
                     key={`space-${index}`}
                     className="h-2"
+                    aria-hidden="true"
                 />
             );
         }
 
         /*
-         * Bullet list
+         * Markdown bullet
          */
         if (
             trimmed.startsWith("- ") ||
@@ -225,7 +302,16 @@ function renderAssistantContent(content: string) {
                     key={index}
                     className="flex gap-2"
                 >
-                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-sky-400" />
+                    <span
+                        className="
+                            mt-2
+                            h-1.5
+                            w-1.5
+                            shrink-0
+                            rounded-full
+                            bg-sky-400
+                        "
+                    />
 
                     <span>
                         {renderInlineText(text)}
@@ -246,7 +332,13 @@ function renderAssistantContent(content: string) {
                     key={index}
                     className="flex gap-2"
                 >
-                    <span className="shrink-0 font-semibold text-sky-500">
+                    <span
+                        className="
+                            shrink-0
+                            font-semibold
+                            text-sky-500
+                        "
+                    >
                         {numberedMatch[1]}.
                     </span>
 
@@ -292,91 +384,29 @@ function renderAssistantContent(content: string) {
 
 /*
 |--------------------------------------------------------------------------
-| Inline text renderer
-|--------------------------------------------------------------------------
-|
-| Supports:
-| - **bold**
-| - URLs
-|
-*/
-
-function renderInlineText(text: string) {
-    const parts = text.split(
-        /(https?:\/\/[^\s]+|\*\*[^*]+\*\*)/g,
-    );
-
-    return parts.map((part, index) => {
-        if (
-            part.startsWith("http://") ||
-            part.startsWith("https://")
-        ) {
-            const cleanUrl = part.replace(
-                /[),.!?]+$/,
-                "",
-            );
-
-            return (
-                <a
-                    key={index}
-                    href={cleanUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="
-                        font-medium
-                        text-sky-500
-                        underline
-                        underline-offset-2
-                        hover:text-sky-600
-                    "
-                >
-                    {cleanUrl}
-                </a>
-            );
-        }
-
-        if (
-            part.startsWith("**") &&
-            part.endsWith("**")
-        ) {
-            return (
-                <strong
-                    key={index}
-                    className="font-semibold text-slate-900"
-                >
-                    {part.slice(2, -2)}
-                </strong>
-            );
-        }
-
-        return (
-            <span key={index}>
-                {part}
-            </span>
-        );
-    });
-}
-
-/*
-|--------------------------------------------------------------------------
 | Main Chatbot
 |--------------------------------------------------------------------------
 */
 
 export default function PortfolioChatbot() {
-    const [open, setOpen] = useState(false);
+    const open = useChatbotStore((state) => state.isOpen);
+    const openChat = useChatbotStore((state) => state.openChat);
+    const closeChat = useChatbotStore((state) => state.closeChat);
 
-    const [messages, setMessages] = useState<
-        Message[]
-    >([welcomeMessage]);
+    const [messages, setMessages] = useState<Message[]>([
+        welcomeMessage,
+    ]);
 
     const [input, setInput] = useState("");
 
     const [loading, setLoading] = useState(false);
 
-    const [copiedId, setCopiedId] = useState<
-        string | null
-    >(null);
+    const [copiedId, setCopiedId] =
+        useState<string | null>(null);
+
+    const [feedback, setFeedback] = useState<
+        Record<string, FeedbackValue>
+    >({});
 
     const inputRef =
         useRef<HTMLTextAreaElement>(null);
@@ -385,8 +415,11 @@ export default function PortfolioChatbot() {
         useRef<HTMLDivElement>(null);
 
     /*
-     * Scroll to newest message.
-     */
+    |--------------------------------------------------------------------------
+    | Scroll to newest message
+    |--------------------------------------------------------------------------
+    */
+
     useEffect(() => {
         bottomRef.current?.scrollIntoView({
             behavior: "smooth",
@@ -395,8 +428,11 @@ export default function PortfolioChatbot() {
     }, [messages, loading]);
 
     /*
-     * Focus input when chatbot opens.
-     */
+    |--------------------------------------------------------------------------
+    | Focus input when chatbot opens
+    |--------------------------------------------------------------------------
+    */
+
     useEffect(() => {
         if (!open) {
             return;
@@ -412,8 +448,44 @@ export default function PortfolioChatbot() {
     }, [open]);
 
     /*
-     * Lock background scrolling on mobile.
-     */
+    |--------------------------------------------------------------------------
+    | Escape closes chatbot
+    |--------------------------------------------------------------------------
+    */
+
+    useEffect(() => {
+        if (!open) {
+            return;
+        }
+
+        function handleEscape(event: globalThis.KeyboardEvent) {
+            if (
+                event.key === "Escape" &&
+                !loading
+            ) {
+                closeChat();
+            }
+        }
+
+        window.addEventListener(
+            "keydown",
+            handleEscape,
+        );
+
+        return () => {
+            window.removeEventListener(
+                "keydown",
+                handleEscape,
+            );
+        };
+    }, [open, loading]);
+
+    /*
+    |--------------------------------------------------------------------------
+    | Lock background scrolling on mobile
+    |--------------------------------------------------------------------------
+    */
+
     useEffect(() => {
         if (
             !open ||
@@ -434,10 +506,43 @@ export default function PortfolioChatbot() {
     }, [open]);
 
     /*
-     * Send message.
-     */
+    |--------------------------------------------------------------------------
+    | Build API history
+    |--------------------------------------------------------------------------
+    */
+
+    const buildHistory = useCallback(
+        (
+            sourceMessages: Message[],
+        ): ChatHistoryItem[] => {
+            return sourceMessages
+                .filter(
+                    (message) =>
+                        !message.error,
+                )
+                .slice(-MAX_HISTORY_MESSAGES)
+                .map(
+                    ({
+                        role,
+                        content,
+                    }) => ({
+                        role,
+                        content,
+                    }),
+                );
+        },
+        [],
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | Send message
+    |--------------------------------------------------------------------------
+    */
+
     async function sendMessage(
         customMessage?: string,
+        historyOverride?: Message[],
     ) {
         const text =
             customMessage !== undefined
@@ -448,30 +553,16 @@ export default function PortfolioChatbot() {
             return;
         }
 
-        const safeText =
-            text.slice(
-                0,
-                MAX_MESSAGE_LENGTH,
-            );
+        const safeText = text.slice(
+            0,
+            MAX_MESSAGE_LENGTH,
+        );
 
-        /*
-         * Save history BEFORE current user message.
-         */
-        const history: ChatHistoryItem[] =
-            messages
-                .filter(
-                    (message) =>
-                        !message.error,
-                )
-                .map(
-                    ({
-                        role,
-                        content,
-                    }) => ({
-                        role,
-                        content,
-                    }),
-                );
+        const historySource =
+            historyOverride ?? messages;
+
+        const history =
+            buildHistory(historySource);
 
         const userMessage: Message = {
             id: crypto.randomUUID(),
@@ -485,6 +576,15 @@ export default function PortfolioChatbot() {
         ]);
 
         setInput("");
+
+        /*
+         * Reset textarea height after sending.
+         */
+        if (inputRef.current) {
+            inputRef.current.style.height =
+                "48px";
+        }
+
         setLoading(true);
 
         try {
@@ -506,7 +606,7 @@ export default function PortfolioChatbot() {
             let data: {
                 answer?: unknown;
                 error?: unknown;
-            };
+            } = {};
 
             try {
                 data =
@@ -570,8 +670,11 @@ export default function PortfolioChatbot() {
     }
 
     /*
-     * Clear conversation.
-     */
+    |--------------------------------------------------------------------------
+    | Clear conversation
+    |--------------------------------------------------------------------------
+    */
+
     function clearChat() {
         if (loading) {
             return;
@@ -585,7 +688,15 @@ export default function PortfolioChatbot() {
         ]);
 
         setInput("");
+
         setCopiedId(null);
+
+        setFeedback({});
+
+        if (inputRef.current) {
+            inputRef.current.style.height =
+                "48px";
+        }
 
         window.setTimeout(() => {
             inputRef.current?.focus();
@@ -593,15 +704,43 @@ export default function PortfolioChatbot() {
     }
 
     /*
-     * Retry last failed assistant response.
-     */
-    function retryLastMessage() {
+    |--------------------------------------------------------------------------
+    | Retry failed request
+    |--------------------------------------------------------------------------
+    |
+    | Important:
+    | We construct the exact history BEFORE the failed assistant message,
+    | rather than relying on a state update followed immediately by sendMessage.
+    |--------------------------------------------------------------------------
+    */
+
+    function retryLastMessage(
+        errorMessageId: string,
+    ) {
         if (loading) {
             return;
         }
 
+        const errorIndex =
+            messages.findIndex(
+                (message) =>
+                    message.id ===
+                    errorMessageId &&
+                    message.error,
+            );
+
+        if (errorIndex === -1) {
+            return;
+        }
+
+        const previousMessages =
+            messages.slice(
+                0,
+                errorIndex,
+            );
+
         const lastUserMessage =
-            [...messages]
+            [...previousMessages]
                 .reverse()
                 .find(
                     (message) =>
@@ -614,39 +753,37 @@ export default function PortfolioChatbot() {
         }
 
         /*
-         * Remove the error message.
+         * Remove the failed assistant response.
          */
-        setMessages((current) => {
-            const lastErrorIndex =
-                current.findLastIndex(
-                    (message) =>
-                        message.error,
-                );
+        setMessages(previousMessages);
 
-            if (
-                lastErrorIndex === -1
-            ) {
-                return current;
-            }
-
-            return current.filter(
-                (_, index) =>
-                    index !==
-                    lastErrorIndex,
-            );
-        });
-
+        /*
+         * Send using the exact previous conversation.
+         */
         void sendMessage(
             lastUserMessage.content,
+            previousMessages.slice(
+                0,
+                previousMessages.lastIndexOf(
+                    lastUserMessage,
+                ),
+            ),
         );
     }
 
     /*
-     * Copy assistant response.
-     */
+    |--------------------------------------------------------------------------
+    | Copy assistant response
+    |--------------------------------------------------------------------------
+    */
+
     async function copyMessage(
         message: Message,
     ) {
+        if (message.error) {
+            return;
+        }
+
         try {
             await navigator.clipboard.writeText(
                 message.content,
@@ -670,8 +807,30 @@ export default function PortfolioChatbot() {
     }
 
     /*
-     * Submit form.
-     */
+    |--------------------------------------------------------------------------
+    | Feedback
+    |--------------------------------------------------------------------------
+    */
+
+    function handleFeedback(
+        messageId: string,
+        value: FeedbackValue,
+    ) {
+        setFeedback((current) => ({
+            ...current,
+            [messageId]:
+                current[messageId] === value
+                    ? undefined!
+                    : value,
+        }));
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Submit form
+    |--------------------------------------------------------------------------
+    */
+
     function handleSubmit(
         event: FormEvent<HTMLFormElement>,
     ) {
@@ -681,14 +840,15 @@ export default function PortfolioChatbot() {
     }
 
     /*
-     * Keyboard behavior.
-     *
-     * Enter:
-     * send
-     *
-     * Shift + Enter:
-     * new line
-     */
+    |--------------------------------------------------------------------------
+    | Keyboard behavior
+    |--------------------------------------------------------------------------
+    |
+    | Enter       -> send
+    | Shift+Enter -> newline
+    |--------------------------------------------------------------------------
+    */
+
     function handleKeyDown(
         event: KeyboardEvent<HTMLTextAreaElement>,
     ) {
@@ -703,17 +863,20 @@ export default function PortfolioChatbot() {
     }
 
     /*
-     * Auto-grow textarea.
-     */
+    |--------------------------------------------------------------------------
+    | Auto-grow textarea
+    |--------------------------------------------------------------------------
+    */
+
     function handleInputChange(
         value: string,
     ) {
-        setInput(
-            value.slice(
-                0,
-                MAX_MESSAGE_LENGTH,
-            ),
+        const safeValue = value.slice(
+            0,
+            MAX_MESSAGE_LENGTH,
         );
+
+        setInput(safeValue);
 
         const textarea =
             inputRef.current;
@@ -724,12 +887,20 @@ export default function PortfolioChatbot() {
 
         textarea.style.height = "auto";
 
-        textarea.style.height =
-            `${Math.min(
+        textarea.style.height = `${Math.min(
+            Math.max(
                 textarea.scrollHeight,
-                120,
-            )}px`;
+                48,
+            ),
+            120,
+        )}px`;
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Render
+    |--------------------------------------------------------------------------
+    */
 
     return (
         <>
@@ -776,9 +947,7 @@ export default function PortfolioChatbot() {
                     >
                         <motion.button
                             type="button"
-                            onClick={() =>
-                                setOpen(true)
-                            }
+                            onClick={openChat}
                             whileHover={{
                                 scale: 1.06,
                             }}
@@ -816,6 +985,8 @@ export default function PortfolioChatbot() {
                             "
                             aria-label="Open portfolio assistant"
                         >
+                            {/* Ambient glow */}
+
                             <motion.div
                                 animate={{
                                     scale: [
@@ -845,6 +1016,8 @@ export default function PortfolioChatbot() {
                                 "
                             />
 
+                            {/* Avatar */}
+
                             <div
                                 className="
                                     relative
@@ -869,8 +1042,11 @@ export default function PortfolioChatbot() {
                                         duration-500
                                         group-hover:scale-105
                                     "
+                                    draggable={false}
                                 />
                             </div>
+
+                            {/* AI badge */}
 
                             <span
                                 className="
@@ -898,6 +1074,8 @@ export default function PortfolioChatbot() {
                                 AI
                             </span>
 
+                            {/* Online indicator */}
+
                             <motion.span
                                 animate={{
                                     boxShadow: [
@@ -924,6 +1102,8 @@ export default function PortfolioChatbot() {
                                 "
                                 aria-label="Online"
                             />
+
+                            {/* Desktop hover label */}
 
                             <span
                                 className="
@@ -1035,6 +1215,8 @@ export default function PortfolioChatbot() {
                                 text-white
                             "
                         >
+                            {/* Header glow */}
+
                             <div
                                 className="
                                     pointer-events-none
@@ -1065,6 +1247,8 @@ export default function PortfolioChatbot() {
 
                             <div className="relative flex items-center justify-between gap-4">
                                 <div className="flex min-w-0 items-center gap-3">
+                                    {/* Avatar */}
+
                                     <div
                                         className="
                                             flex
@@ -1086,17 +1270,33 @@ export default function PortfolioChatbot() {
                                         />
                                     </div>
 
+                                    {/* Title */}
+
                                     <div className="min-w-0">
                                         <div className="flex items-center gap-2">
                                             <p className="truncate text-sm font-bold">
                                                 Portfolio Assistant
                                             </p>
 
-                                            <Sparkles className="h-3.5 w-3.5 shrink-0 text-sky-400" />
+                                            <Sparkles
+                                                className="
+                                                    h-3.5
+                                                    w-3.5
+                                                    shrink-0
+                                                    text-sky-400
+                                                "
+                                            />
                                         </div>
 
                                         <div className="mt-1 flex items-center gap-1.5">
-                                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                                            <span
+                                                className="
+                                                    h-1.5
+                                                    w-1.5
+                                                    rounded-full
+                                                    bg-emerald-400
+                                                "
+                                            />
 
                                             <p className="text-[11px] text-slate-400">
                                                 Online · Ask me anything
@@ -1104,6 +1304,8 @@ export default function PortfolioChatbot() {
                                         </div>
                                     </div>
                                 </div>
+
+                                {/* Controls */}
 
                                 <div className="relative flex shrink-0 items-center gap-1">
                                     <button
@@ -1121,6 +1323,9 @@ export default function PortfolioChatbot() {
                                             transition
                                             hover:bg-white/10
                                             hover:text-white
+                                            focus:outline-none
+                                            focus:ring-2
+                                            focus:ring-sky-400/50
                                             disabled:cursor-not-allowed
                                             disabled:opacity-30
                                         "
@@ -1132,10 +1337,9 @@ export default function PortfolioChatbot() {
 
                                     <button
                                         type="button"
-                                        onClick={() =>
-                                            setOpen(
-                                                false,
-                                            )
+                                        onClick={closeChat}
+                                        disabled={
+                                            loading
                                         }
                                         className="
                                             rounded-xl
@@ -1144,6 +1348,11 @@ export default function PortfolioChatbot() {
                                             transition
                                             hover:bg-white/10
                                             hover:text-white
+                                            focus:outline-none
+                                            focus:ring-2
+                                            focus:ring-sky-400/50
+                                            disabled:cursor-not-allowed
+                                            disabled:opacity-30
                                         "
                                         aria-label="Close chatbot"
                                         title="Close chatbot"
@@ -1172,10 +1381,31 @@ export default function PortfolioChatbot() {
                                 [scrollbar-color:#cbd5e1_transparent]
                                 [scrollbar-width:thin]
                             "
+                            aria-live="polite"
                         >
+                            {/* Welcome marker */}
+
                             {messages.length === 1 && (
                                 <div className="mb-5 flex items-center justify-center">
-                                    <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-400 shadow-sm">
+                                    <div
+                                        className="
+                                            flex
+                                            items-center
+                                            gap-2
+                                            rounded-full
+                                            border
+                                            border-slate-200
+                                            bg-white
+                                            px-3
+                                            py-1.5
+                                            text-[10px]
+                                            font-semibold
+                                            uppercase
+                                            tracking-[0.15em]
+                                            text-slate-400
+                                            shadow-sm
+                                        "
+                                    >
                                         <Bot className="h-3 w-3 text-sky-500" />
                                         Portfolio AI
                                     </div>
@@ -1188,6 +1418,11 @@ export default function PortfolioChatbot() {
                                         const isUser =
                                             message.role ===
                                             "user";
+
+                                        const currentFeedback =
+                                            feedback[
+                                                message.id
+                                            ];
 
                                         return (
                                             <motion.div
@@ -1213,6 +1448,8 @@ export default function PortfolioChatbot() {
                                                         : "justify-start"
                                                 }`}
                                             >
+                                                {/* Assistant avatar */}
+
                                                 {!isUser && (
                                                     <div className="mr-2 mt-1">
                                                         <BotAvatar size="sm" />
@@ -1228,6 +1465,8 @@ export default function PortfolioChatbot() {
                                                         }
                                                     `}
                                                 >
+                                                    {/* Message bubble */}
+
                                                     <div
                                                         className={`
                                                             rounded-2xl
@@ -1290,73 +1529,128 @@ export default function PortfolioChatbot() {
                                                                 gap-0.5
                                                                 pl-1
                                                                 opacity-0
-                                                                transition
+                                                                transition-opacity
                                                                 group-hover:opacity-100
+                                                                group-focus-within:opacity-100
                                                             "
                                                         >
-                                                            <button
-                                                                type="button"
-                                                                onClick={() =>
-                                                                    void copyMessage(
-                                                                        message,
-                                                                    )
-                                                                }
-                                                                className="
-                                                                    rounded-lg
-                                                                    p-1.5
-                                                                    text-slate-400
-                                                                    transition
-                                                                    hover:bg-white
-                                                                    hover:text-slate-600
-                                                                "
-                                                                aria-label="Copy answer"
-                                                                title="Copy answer"
-                                                            >
-                                                                {copiedId ===
-                                                                message.id ? (
-                                                                    <Check className="h-3.5 w-3.5 text-emerald-500" />
-                                                                ) : (
-                                                                    <Copy className="h-3.5 w-3.5" />
-                                                                )}
-                                                            </button>
+                                                            {/* Copy */}
 
-                                                            <button
-                                                                type="button"
-                                                                className="
-                                                                    rounded-lg
-                                                                    p-1.5
-                                                                    text-slate-400
-                                                                    transition
-                                                                    hover:bg-white
-                                                                    hover:text-slate-600
-                                                                "
-                                                                aria-label="Helpful"
-                                                                title="Helpful"
-                                                            >
-                                                                <ThumbsUp className="h-3.5 w-3.5" />
-                                                            </button>
+                                                            {!message.error && (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() =>
+                                                                        void copyMessage(
+                                                                            message,
+                                                                        )
+                                                                    }
+                                                                    className="
+                                                                        rounded-lg
+                                                                        p-1.5
+                                                                        text-slate-400
+                                                                        transition
+                                                                        hover:bg-white
+                                                                        hover:text-slate-600
+                                                                        focus:outline-none
+                                                                        focus:ring-2
+                                                                        focus:ring-sky-400/40
+                                                                    "
+                                                                    aria-label="Copy answer"
+                                                                    title="Copy answer"
+                                                                >
+                                                                    {copiedId ===
+                                                                    message.id ? (
+                                                                        <Check className="h-3.5 w-3.5 text-emerald-500" />
+                                                                    ) : (
+                                                                        <Copy className="h-3.5 w-3.5" />
+                                                                    )}
+                                                                </button>
+                                                            )}
 
-                                                            <button
-                                                                type="button"
-                                                                className="
-                                                                    rounded-lg
-                                                                    p-1.5
-                                                                    text-slate-400
-                                                                    transition
-                                                                    hover:bg-white
-                                                                    hover:text-slate-600
-                                                                "
-                                                                aria-label="Not helpful"
-                                                                title="Not helpful"
-                                                            >
-                                                                <ThumbsDown className="h-3.5 w-3.5" />
-                                                            </button>
+                                                            {/* Helpful */}
+
+                                                            {!message.error && (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() =>
+                                                                        handleFeedback(
+                                                                            message.id,
+                                                                            "up",
+                                                                        )
+                                                                    }
+                                                                    className={`
+                                                                        rounded-lg
+                                                                        p-1.5
+                                                                        transition
+                                                                        focus:outline-none
+                                                                        focus:ring-2
+                                                                        focus:ring-sky-400/40
+                                                                        ${
+                                                                            currentFeedback ===
+                                                                            "up"
+                                                                                ? "bg-emerald-50 text-emerald-500"
+                                                                                : "text-slate-400 hover:bg-white hover:text-slate-600"
+                                                                        }
+                                                                    `}
+                                                                    aria-label="Helpful"
+                                                                    title="Helpful"
+                                                                    aria-pressed={
+                                                                        currentFeedback ===
+                                                                        "up"
+                                                                    }
+                                                                >
+                                                                    <ThumbsUp className="h-3.5 w-3.5" />
+                                                                </button>
+                                                            )}
+
+                                                            {/* Not helpful */}
+
+                                                            {!message.error && (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() =>
+                                                                        handleFeedback(
+                                                                            message.id,
+                                                                            "down",
+                                                                        )
+                                                                    }
+                                                                    className={`
+                                                                        rounded-lg
+                                                                        p-1.5
+                                                                        transition
+                                                                        focus:outline-none
+                                                                        focus:ring-2
+                                                                        focus:ring-sky-400/40
+                                                                        ${
+                                                                            currentFeedback ===
+                                                                            "down"
+                                                                                ? "bg-red-50 text-red-500"
+                                                                                : "text-slate-400 hover:bg-white hover:text-slate-600"
+                                                                        }
+                                                                    `}
+                                                                    aria-label="Not helpful"
+                                                                    title="Not helpful"
+                                                                    aria-pressed={
+                                                                        currentFeedback ===
+                                                                        "down"
+                                                                    }
+                                                                >
+                                                                    <ThumbsDown className="h-3.5 w-3.5" />
+                                                                </button>
+                                                            )}
+
+                                                            {/* Retry */}
 
                                                             {message.error && (
                                                                 <button
                                                                     type="button"
-                                                                    onClick={
-                                                                        retryLastMessage
+                                                                    onClick={() =>
+                                                                        retryLastMessage(
+                                                                            message.id,
+                                                                        )
+                                                                    }
+                                                                    disabled={
+                                                                        loading
                                                                     }
                                                                     className="
                                                                         ml-1
@@ -1369,7 +1663,13 @@ export default function PortfolioChatbot() {
                                                                         transition
                                                                         hover:bg-white
                                                                         hover:text-sky-600
+                                                                        focus:outline-none
+                                                                        focus:ring-2
+                                                                        focus:ring-sky-400/40
+                                                                        disabled:cursor-not-allowed
+                                                                        disabled:opacity-50
                                                                     "
+                                                                    aria-label="Retry request"
                                                                 >
                                                                     Retry
                                                                 </button>
@@ -1383,7 +1683,7 @@ export default function PortfolioChatbot() {
                                 )}
                             </AnimatePresence>
 
-                            {/* Typing */}
+                            {/* Typing indicator */}
 
                             <AnimatePresence>
                                 {loading && (
@@ -1441,7 +1741,15 @@ export default function PortfolioChatbot() {
                                             <div className="mb-2.5 flex items-center gap-2">
                                                 <Sparkles className="h-3.5 w-3.5 text-sky-500" />
 
-                                                <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                                                <span
+                                                    className="
+                                                        text-[10px]
+                                                        font-bold
+                                                        uppercase
+                                                        tracking-[0.18em]
+                                                        text-slate-400
+                                                    "
+                                                >
                                                     Try asking
                                                 </span>
                                             </div>
@@ -1485,6 +1793,9 @@ export default function PortfolioChatbot() {
                                                                 hover:border-sky-300
                                                                 hover:bg-sky-50
                                                                 hover:text-sky-600
+                                                                focus:outline-none
+                                                                focus:ring-2
+                                                                focus:ring-sky-400/40
                                                                 disabled:cursor-not-allowed
                                                                 disabled:opacity-50
                                                             "
@@ -1543,7 +1854,9 @@ export default function PortfolioChatbot() {
                                     }
                                     rows={1}
                                     autoComplete="off"
+                                    spellCheck={true}
                                     placeholder="Ask about my skills..."
+                                    aria-label="Message"
                                     className="
                                         min-h-12
                                         max-h-[120px]
@@ -1571,8 +1884,7 @@ export default function PortfolioChatbot() {
                                     "
                                 />
 
-                                {input.length >
-                                    0 && (
+                                {input.length > 0 && (
                                     <span
                                         className="
                                             pointer-events-none
@@ -1582,6 +1894,7 @@ export default function PortfolioChatbot() {
                                             text-[9px]
                                             text-slate-300
                                         "
+                                        aria-hidden="true"
                                     >
                                         {
                                             input.length
@@ -1593,6 +1906,8 @@ export default function PortfolioChatbot() {
                                     </span>
                                 )}
                             </div>
+
+                            {/* Send button */}
 
                             <motion.button
                                 type="submit"
@@ -1631,6 +1946,9 @@ export default function PortfolioChatbot() {
                                     shadow-sky-500/20
                                     transition
                                     hover:bg-sky-400
+                                    focus:outline-none
+                                    focus:ring-4
+                                    focus:ring-sky-400/30
                                     disabled:cursor-not-allowed
                                     disabled:opacity-40
                                     disabled:shadow-none
@@ -1648,6 +1966,7 @@ export default function PortfolioChatbot() {
                                                 Infinity,
                                             ease: "linear",
                                         }}
+                                        aria-hidden="true"
                                     >
                                         <Sparkles className="h-4 w-4" />
                                     </motion.div>

@@ -55,7 +55,7 @@ model Profile {
   name         String
   title        String
   headline     String
-  bio          String? 
+  bio          String
   email        String?
   location     String?
   summary      String

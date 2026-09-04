@@ -35,17 +35,17 @@ if (typeof window === 'undefined') {
   void ensureDatabase();
 }
 
-const createSql = `
-  CREATE TABLE IF NOT EXISTS "Skill" (
+const createStatements = [
+  `CREATE TABLE IF NOT EXISTS "Skill" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     "name" TEXT NOT NULL UNIQUE,
     "category" TEXT NOT NULL,
     "order" INTEGER NOT NULL DEFAULT 0,
     "createdAt" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-  );
+  )`,
 
-  CREATE TABLE IF NOT EXISTS "Project" (
+  `CREATE TABLE IF NOT EXISTS "Project" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     "title" TEXT NOT NULL,
     "slug" TEXT NOT NULL UNIQUE,
@@ -59,9 +59,9 @@ const createSql = `
     "tags" TEXT NOT NULL DEFAULT '',
     "createdAt" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-  );
+  )`,
 
-  CREATE TABLE IF NOT EXISTS "AdminUser" (
+  `CREATE TABLE IF NOT EXISTS "AdminUser" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "name" TEXT NOT NULL,
     "email" TEXT NOT NULL UNIQUE,
@@ -69,21 +69,23 @@ const createSql = `
     "role" TEXT NOT NULL DEFAULT 'admin',
     "createdAt" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-  );
+  )`,
 
-  CREATE TABLE IF NOT EXISTS "Profile" (
+  `CREATE TABLE IF NOT EXISTS "Profile" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     "name" TEXT NOT NULL,
     "title" TEXT NOT NULL,
+    "headline" TEXT NOT NULL DEFAULT '',
+    "bio" TEXT NOT NULL DEFAULT '',
     "email" TEXT,
     "location" TEXT,
     "summary" TEXT NOT NULL,
     "availability" TEXT,
     "createdAt" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-  );
+  )`,
 
-  CREATE TABLE IF NOT EXISTS "Experience" (
+  `CREATE TABLE IF NOT EXISTS "Experience" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     "company" TEXT NOT NULL,
     "position" TEXT NOT NULL,
@@ -94,11 +96,26 @@ const createSql = `
     "current" INTEGER NOT NULL DEFAULT 0,
     "createdAt" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-  );
-`;
+  )`,
+];
+
+const indexStatements = [
+  `CREATE INDEX IF NOT EXISTS "Skill_category_idx" ON "Skill"("category")`,
+  `CREATE INDEX IF NOT EXISTS "Skill_order_idx" ON "Skill"("order")`,
+  `CREATE INDEX IF NOT EXISTS "Project_featured_idx" ON "Project"("featured")`,
+  `CREATE INDEX IF NOT EXISTS "Project_status_idx" ON "Project"("status")`,
+  `CREATE INDEX IF NOT EXISTS "AdminUser_role_idx" ON "AdminUser"("role")`,
+  `CREATE INDEX IF NOT EXISTS "Experience_current_idx" ON "Experience"("current")`,
+];
 
 async function rebuildDatabase() {
-  await prisma.$executeRawUnsafe(createSql);
+  for (const statement of createStatements) {
+    await prisma.$executeRawUnsafe(statement);
+  }
+
+  for (const statement of indexStatements) {
+    await prisma.$executeRawUnsafe(statement);
+  }
 }
 
 export async function ensureDatabase() {
@@ -118,6 +135,23 @@ export async function ensureDatabase() {
 
       if (missing.length > 0) {
         await rebuildDatabase();
+      }
+
+      const profileColumns = await prisma.$queryRawUnsafe<Array<{ name: string }>>(
+        `PRAGMA table_info("Profile")`,
+      );
+      const profileColumnSet = new Set(profileColumns.map((column) => column.name));
+
+      if (!profileColumnSet.has('headline')) {
+        await prisma.$executeRawUnsafe(
+          `ALTER TABLE "Profile" ADD COLUMN "headline" TEXT NOT NULL DEFAULT ''`,
+        );
+      }
+
+      if (!profileColumnSet.has('bio')) {
+        await prisma.$executeRawUnsafe(
+          `ALTER TABLE "Profile" ADD COLUMN "bio" TEXT NOT NULL DEFAULT ''`,
+        );
       }
     } catch {
       await rebuildDatabase();

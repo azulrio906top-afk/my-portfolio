@@ -4,9 +4,13 @@ A full-stack portfolio application built with Next.js, React, TypeScript, Tailwi
 
 ## Included
 
-- Responsive portfolio landing page
+- Responsive, data-driven portfolio landing page
+- Premium Hero section with AI-first positioning and direct chatbot CTA
+- Product-style project showcase with browser previews and truthful deployment states
+- Dynamic project case-study pages at `/projects/[slug]`
+- AI assistant showcase section integrated with the portfolio chatbot
 - Light/dark theme toggle
-- Projects and skills loaded from Prisma
+- Profile, projects, skills, and experience data loaded from Prisma
 - Project search/display in the admin area
 - Admin authentication
 - Skills CRUD
@@ -31,7 +35,7 @@ A full-stack portfolio application built with Next.js, React, TypeScript, Tailwi
 npm install
 ```
 
-2. Create `.env` from `.env.example`.
+2. Create `.env` from `.env.example`. Never commit `.env`.
 
 3. Set at least:
 
@@ -42,6 +46,8 @@ ADMIN_EMAIL="admin@portfolio.dev"
 ADMIN_PASSWORD="change-this-password"
 OPENROUTER_API_KEY="your-openrouter-key"
 OPENROUTER_MODEL="openrouter/free"
+ADMIN_EMAIL="admin@portfolio.dev"
+ADMIN_PASSWORD="change-this-password"
 ```
 
 The existing project also accepts `OPENAI_API_KEY` as a fallback for the AI key.
@@ -83,7 +89,7 @@ The credentials come from `ADMIN_EMAIL` and `ADMIN_PASSWORD` in `.env`.
 
 Never commit `.env` or API keys. Configure secrets through your hosting provider. Before deployment, replace the development admin password and `AUTH_SECRET`.
 
-For a hosted production database, update the Prisma datasource and deployment configuration appropriately.
+For production, use a managed database rather than the checked-in development SQLite file. Keep `AUTH_SECRET`, admin credentials, and AI provider keys in your host's secret manager. Run migrations during deployment and never ship a real `.env` file.
 
 ## Useful commands
 

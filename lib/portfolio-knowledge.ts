@@ -26,7 +26,6 @@ type PortfolioExperience = {
   id: number;
   company: string;
   position: string;
-  location: string;
   startDate: string;
   endDate: string | null;
   description: string;
@@ -319,7 +318,11 @@ function formatProfile(
 
     `Name: ${clean(profile.name)}`,
 
-    `Headline: ${clean(profile.title)}`,
+    `Title: ${clean(profile.title)}`,
+
+    `Headline: ${clean(profile.headline)}`,
+
+    `Bio: ${clean(profile.bio)}`,
 
     `Email: ${clean(profile.email)}`,
 
@@ -460,10 +463,6 @@ function formatExperience(
 
           `Company: ${clean(
             experience.company,
-          )}`,
-
-          `Location: ${clean(
-            experience.location,
           )}`,
 
           `Period: ${
@@ -734,7 +733,6 @@ export async function getPortfolioKnowledge(
               [
                 experience.position,
                 experience.company,
-                experience.location,
                 experience.description,
               ]
                 .filter(Boolean)

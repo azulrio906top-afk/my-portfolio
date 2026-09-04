@@ -19,6 +19,10 @@ import {
     Code2,
     Database,
     ExternalLink,
+    // Github,
+    Eye,
+    ArrowUpRight,
+    Bot,
     Layers3,
     Mail,
     Menu,
@@ -32,6 +36,7 @@ import {
 } from "lucide-react";
 
 import PortfolioChatbot from "@/components/portfolio-chatbot";
+import { useChatbotStore } from "@/lib/chatbot-store";
 
 /* ================================================================
    TYPES
@@ -40,19 +45,35 @@ import PortfolioChatbot from "@/components/portfolio-chatbot";
 type SkillItem = {
     id: number;
     name: string;
+    category?: string;
+};
+
+type ProfileItem = {
+    name: string;
+    title: string;
+    headline: string;
+    bio: string;
+    email?: string | null;
+    location?: string | null;
+    summary: string;
+    availability?: string | null;
 };
 
 type ProjectItem = {
     id: number;
+    slug: string;
     title: string;
     summary: string;
     status: string;
+    featured?: boolean;
     url?: string | null;
+    githubUrl?: string | null;
     imageUrl?: string | null;
     tags?: string | null;
 };
 
 type PortfolioLandingProps = {
+    profile: ProfileItem;
     skillList: SkillItem[];
     projectList: ProjectItem[];
 };
@@ -186,6 +207,7 @@ function parseTags(tags?: string | null) {
 ================================================================ */
 
 export function PortfolioLanding({
+    profile,
     skillList,
     projectList,
 }: PortfolioLandingProps) {
@@ -203,6 +225,8 @@ export function PortfolioLanding({
 
     const [activeSection, setActiveSection] =
         useState("work");
+
+    const openChat = useChatbotStore((state) => state.openChat);
 
     /* ============================================================
        THEME
@@ -371,6 +395,7 @@ export function PortfolioLanding({
         : projects.slice(0, 4);
 
     const featuredProject = projects[0];
+    const featuredCount = projects.filter((project) => project.featured).length;
 
     const remainingProjects =
         visibleProjects.slice(1);
@@ -673,7 +698,7 @@ export function PortfolioLanding({
                                         ${heading}
                                     `}
                                 >
-                                    FLUNCO RUIZ
+                                    {profile.name}
                                 </p>
 
                                 <p
@@ -684,7 +709,7 @@ export function PortfolioLanding({
                                         ${muted}
                                     `}
                                 >
-                                    Developer / Designer
+                                    {profile.title}
                                 </p>
                             </div>
                         </a>
@@ -1030,6 +1055,20 @@ export function PortfolioLanding({
                                 },
                             }}
                         >
+                            <motion.p
+                                variants={{
+                                    hidden: { opacity: 0, y: 14 },
+                                    visible: {
+                                        opacity: 1,
+                                        y: 0,
+                                        transition: { duration: 0.5 },
+                                    },
+                                }}
+                                className="mb-3 text-xs font-black uppercase tracking-[0.28em] text-sky-500"
+                            >
+                                Full-Stack AI Developer � Product Builder
+                            </motion.p>
+
                             <motion.div
                                 variants={{
                                     hidden: {
@@ -1073,7 +1112,7 @@ export function PortfolioLanding({
                                     <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
                                 </span>
 
-                                Available for selected freelance work
+                                {profile.availability || "Open to selected projects"}
                             </motion.div>
 
                             <motion.h1
@@ -1107,11 +1146,7 @@ export function PortfolioLanding({
                                     ${heading}
                                 `}
                             >
-                                I build digital products
-                                <span className="text-sky-500">
-                                    {" "}
-                                    that move businesses forward.
-                                </span>
+                                {profile.headline || "Building intelligent digital products with Full-Stack + AI."}
                             </motion.h1>
 
                             <motion.p
@@ -1143,12 +1178,7 @@ export function PortfolioLanding({
                                     ${muted}
                                 `}
                             >
-                                Full-stack developer and
-                                product designer helping
-                                startups and growing
-                                businesses turn ideas into
-                                fast, elegant and
-                                production-ready software.
+                                {profile.bio || profile.summary}
                             </motion.p>
 
                             <motion.div
@@ -1174,7 +1204,7 @@ export function PortfolioLanding({
                                 className="mt-9 flex flex-wrap gap-3"
                             >
                                 <a
-                                    href="#contact"
+                                    href="#work"
                                     className="
                                         group
                                         inline-flex
@@ -1194,13 +1224,13 @@ export function PortfolioLanding({
                                         hover:bg-sky-400
                                     "
                                 >
-                                    Start a project
-
+                                    Explore my work
                                     <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
                                 </a>
 
-                                <a
-                                    href="#work"
+                                <button
+                                    type="button"
+                                    onClick={openChat}
                                     className={`
                                         inline-flex
                                         items-center
@@ -1216,10 +1246,9 @@ export function PortfolioLanding({
                                         ${secondaryButton}
                                     `}
                                 >
-                                    View selected work
-
-                                    <ChevronRight className="h-4 w-4" />
-                                </a>
+                                    <Bot className="h-4 w-4" />
+                                    Ask my AI assistant
+                                </button>
                             </motion.div>
 
                             <motion.div
@@ -1434,16 +1463,16 @@ export function PortfolioLanding({
                     <div className="mt-20 grid gap-4 sm:grid-cols-3">
                         {[
                             {
-                                value: `${projectList.length}+`,
-                                label: "Projects shipped",
+                                value: `${featuredCount || projectList.length}`,
+                                label: featuredCount ? "Featured projects" : "Projects",
                             },
                             {
-                                value: "6+",
-                                label: "Years building",
+                                value: `${skillList.length}+`,
+                                label: "Technical skills",
                             },
                             {
-                                value: "30+",
-                                label: "Happy clients",
+                                value: profile.title.includes("Product") ? "Full stack + design" : "Full-stack delivery",
+                                label: "Primary focus",
                             },
                         ].map(
                             (
@@ -1526,488 +1555,201 @@ export function PortfolioLanding({
 
             <section
                 id="work"
-                className="scroll-mt-24 border-t border-slate-200/60 dark:border-slate-800/60"
+                className="relative scroll-mt-24 overflow-hidden border-t border-slate-200/60 dark:border-slate-800/60"
             >
-                <div className="mx-auto max-w-7xl px-6 py-24">
+                <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-sky-500/[0.07] to-transparent" />
+
+                <div className="mx-auto max-w-7xl px-6 py-24 lg:py-32">
                     <motion.div
                         initial="hidden"
                         whileInView="visible"
-                        viewport={{
-                            once: true,
-                            amount: 0.2,
-                        }}
+                        viewport={{ once: true, amount: 0.2 }}
                         variants={sectionReveal}
-                        className="mb-12 flex flex-col justify-between gap-5 sm:flex-row sm:items-end"
+                        className="relative mb-14 grid gap-8 lg:grid-cols-[1fr_0.55fr] lg:items-end"
                     >
                         <div>
-                            <p className="text-xs font-bold uppercase tracking-[0.25em] text-sky-500">
-                                Selected work
-                            </p>
+                            <div className="mb-5 flex items-center gap-3">
+                                <span className="h-px w-10 bg-sky-500" />
+                                <p className="text-xs font-bold uppercase tracking-[0.28em] text-sky-500">
+                                    Selected work
+                                </p>
+                            </div>
 
-                            <h2
-                                className={`
-                                    mt-3
-                                    text-4xl
-                                    font-black
-                                    tracking-tight
-                                    sm:text-5xl
-                                    ${heading}
-                                `}
-                            >
-                                Work that solves
+                            <h2 className={`max-w-4xl text-4xl font-black leading-[0.98] tracking-[-0.04em] sm:text-6xl ${heading}`}>
+                                Built to look sharp.
                                 <br />
-                                real problems.
+                                <span className="text-sky-500">Engineered to matter.</span>
                             </h2>
                         </div>
 
-                        <p
-                            className={`
-                                max-w-md
-                                text-sm
-                                leading-6
-                                ${muted}
-                            `}
-                        >
-                            A selection of digital
-                            products, applications and
-                            experiences built with
-                            performance, usability and
-                            business value in mind.
-                        </p>
+                        <div className="lg:pb-1">
+                            <p className={`max-w-lg text-sm leading-7 ${muted}`}>
+                                A curated set of product concepts and full-stack builds focused on real workflows, thoughtful interfaces and production-minded engineering.
+                            </p>
+                            <div className="mt-5 flex flex-wrap gap-2">
+                                <span className={`rounded-full border px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] ${tagClass}`}>
+                                    {projects.length} builds
+                                </span>
+                                <span className={`rounded-full border px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] ${tagClass}`}>
+                                    Full-stack
+                                </span>
+                                <span className={`rounded-full border px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] ${tagClass}`}>
+                                    AI + product
+                                </span>
+                            </div>
+                        </div>
                     </motion.div>
 
-                    {featuredProject ? (
-                        <motion.article
+                    {!projects.length ? (
+                        <motion.div
                             initial="hidden"
                             whileInView="visible"
-                            viewport={{
-                                once: true,
-                                amount: 0.15,
-                            }}
+                            viewport={{ once: true }}
                             variants={sectionReveal}
-                            className={`
-                                overflow-hidden
-                                rounded-[32px]
-                                border
-                                ${panel}
-                            `}
+                            className={`rounded-[32px] border border-dashed p-12 text-center ${softPanel}`}
                         >
-                            <div className="grid lg:grid-cols-[1.25fr_0.75fr]">
-                                {/* Image */}
-
-                                <div
-                                    className={`
-                                        group
-                                        relative
-                                        min-h-[360px]
-                                        overflow-hidden
-                                        ${
-                                            isLight
-                                                ? "bg-slate-200"
-                                                : "bg-slate-800"
-                                        }
-                                    `}
-                                >
-                                    {featuredProject.imageUrl ? (
-                                        <img
-                                            src={
-                                                featuredProject.imageUrl
-                                            }
-                                            alt={
-                                                featuredProject.title
-                                            }
-                                            className="
-                                                absolute
-                                                inset-0
-                                                h-full
-                                                w-full
-                                                object-cover
-                                                transition
-                                                duration-700
-                                                group-hover:scale-105
-                                            "
-                                        />
-                                    ) : (
-                                        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-sky-500/20 via-slate-900 to-slate-950">
-                                            <Code2 className="h-20 w-20 text-sky-400/50" />
-                                        </div>
-                                    )}
-
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/5 to-transparent" />
-
-                                    <div className="absolute bottom-6 left-6">
-                                        <span className="rounded-full border border-white/20 bg-black/40 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-white backdrop-blur-md">
-                                            Featured project
-                                        </span>
-                                    </div>
-                                </div>
-
-                                {/* Details */}
-
-                                <div className="flex flex-col justify-between p-7 sm:p-9">
-                                    <div>
-                                        <div className="flex items-center justify-between gap-4">
-                                            <span className="text-xs font-bold uppercase tracking-[0.2em] text-sky-500">
-                                                01
-                                            </span>
-
-                                            <span
-                                                className={`
-                                                    rounded-full
-                                                    border
-                                                    px-2.5
-                                                    py-1
-                                                    text-[10px]
-                                                    uppercase
-                                                    tracking-[0.15em]
-                                                    ${tagClass}
-                                                `}
-                                            >
-                                                {
-                                                    featuredProject.status
-                                                }
-                                            </span>
-                                        </div>
-
-                                        <h3
-                                            className={`
-                                                mt-7
-                                                text-3xl
-                                                font-black
-                                                tracking-tight
-                                                ${heading}
-                                            `}
-                                        >
-                                            {
-                                                featuredProject.title
-                                            }
-                                        </h3>
-
-                                        <p
-                                            className={`
-                                                mt-4
-                                                text-sm
-                                                leading-7
-                                                ${muted}
-                                            `}
-                                        >
-                                            {
-                                                featuredProject.summary
-                                            }
-                                        </p>
-
-                                        <div className="mt-6 flex flex-wrap gap-2">
-                                            {parseTags(
-                                                featuredProject.tags,
-                                            ).map(
-                                                (
-                                                    tag,
-                                                ) => (
-                                                    <span
-                                                        key={
-                                                            tag
-                                                        }
-                                                        className={`
-                                                            rounded-full
-                                                            border
-                                                            px-3
-                                                            py-1.5
-                                                            text-[10px]
-                                                            font-medium
-                                                            ${tagClass}
-                                                        `}
-                                                    >
-                                                        {
-                                                            tag
-                                                        }
-                                                    </span>
-                                                ),
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    {featuredProject.url && (
-                                        <div className="mt-10">
-                                            <a
-                                                href={
-                                                    featuredProject.url
-                                                }
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                className="
-                                                    group
-                                                    inline-flex
-                                                    items-center
-                                                    gap-2
-                                                    rounded-full
-                                                    bg-sky-500
-                                                    px-5
-                                                    py-3
-                                                    text-sm
-                                                    font-bold
-                                                    text-slate-950
-                                                    transition
-                                                    hover:bg-sky-400
-                                                "
-                                            >
-                                                View project
-
-                                                <ExternalLink className="h-4 w-4 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                                            </a>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </motion.article>
+                            <Code2 className="mx-auto h-10 w-10 text-sky-500" />
+                            <h3 className={`mt-5 text-xl font-bold ${heading}`}>Projects are being prepared.</h3>
+                            <p className={`mx-auto mt-2 max-w-md text-sm leading-6 ${muted}`}>
+                                New work will appear here as it is added through the portfolio dashboard.
+                            </p>
+                        </motion.div>
                     ) : (
-                        <div
-                            className={`
-                                rounded-[32px]
-                                border
-                                border-dashed
-                                p-12
-                                text-center
-                                ${panel}
-                            `}
-                        >
-                            <BriefcaseBusiness className="mx-auto h-8 w-8 text-sky-500" />
+                        <div className="space-y-7">
+                            {visibleProjects.map((project, index) => {
+                                const tags = parseTags(project.tags);
+                                const isFeatured = index === 0;
+                                const hasLiveUrl = Boolean(project.url);
+                                const hasGithub = Boolean(project.githubUrl);
 
-                            <p
-                                className={`
-                                    mt-4
-                                    font-semibold
-                                    ${heading}
-                                `}
-                            >
-                                Projects are coming soon.
-                            </p>
+                                return (
+                                    <motion.article
+                                        key={project.id}
+                                        initial="hidden"
+                                        whileInView="visible"
+                                        viewport={{ once: true, amount: 0.12 }}
+                                        variants={cardReveal}
+                                        transition={{ delay: Math.min(index * 0.06, 0.25) }}
+                                        className={`group relative overflow-hidden rounded-[32px] border ${panel} ${isFeatured ? "shadow-2xl shadow-sky-950/10" : ""}`}
+                                    >
+                                        {isFeatured && (
+                                            <div className="absolute right-6 top-6 z-20 rounded-full border border-sky-300/20 bg-sky-500 px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.18em] text-slate-950 shadow-lg shadow-sky-500/20">
+                                                Featured build
+                                            </div>
+                                        )}
 
-                            <p
-                                className={`
-                                    mt-2
-                                    text-sm
-                                    ${muted}
-                                `}
-                            >
-                                Add projects from the
-                                admin dashboard.
-                            </p>
-                        </div>
-                    )}
+                                        <div className={`grid ${isFeatured ? "lg:grid-cols-[1.35fr_0.65fr]" : "lg:grid-cols-[0.95fr_1.05fr]"}`}>
+                                            <div className={`relative overflow-hidden ${isFeatured ? "min-h-[390px] lg:min-h-[500px]" : "min-h-[280px]"}`}>
+                                                <div className="absolute inset-0 bg-slate-950" />
+                                                <div className="absolute -inset-16 bg-[radial-gradient(circle_at_30%_20%,rgba(14,165,233,0.28),transparent_35%),radial-gradient(circle_at_80%_80%,rgba(56,189,248,0.16),transparent_30%)]" />
 
-                    {remainingProjects.length >
-                        0 && (
-                        <div className="mt-6 grid gap-6 md:grid-cols-3">
-                            {remainingProjects.map(
-                                (
-                                    project,
-                                    index,
-                                ) => {
-                                    const tags =
-                                        parseTags(
-                                            project.tags,
-                                        );
-
-                                    return (
-                                        <motion.article
-                                            key={
-                                                project.id
-                                            }
-                                            initial="hidden"
-                                            whileInView="visible"
-                                            viewport={{
-                                                once: true,
-                                                amount: 0.1,
-                                            }}
-                                            variants={{
-                                                ...cardReveal,
-                                                visible:
-                                                    {
-                                                        opacity: 1,
-                                                        y: 0,
-                                                        transition:
-                                                            {
-                                                                duration:
-                                                                    0.5,
-                                                                delay:
-                                                                    index *
-                                                                    0.08,
-                                                                ease: [
-                                                                    0.16,
-                                                                    1,
-                                                                    0.3,
-                                                                    1,
-                                                                ] as const,
-                                                            },
-                                                    },
-                                            }}
-                                            whileHover={{
-                                                y: -5,
-                                            }}
-                                            className={`
-                                                group
-                                                overflow-hidden
-                                                rounded-3xl
-                                                border
-                                                transition
-                                                duration-300
-                                                hover:shadow-xl
-                                                ${
-                                                    isLight
-                                                        ? "border-slate-200 bg-white hover:shadow-slate-200/70"
-                                                        : "border-slate-800 bg-slate-900/70 hover:shadow-black/30"
-                                                }
-                                            `}
-                                        >
-                                            <div
-                                                className={`
-                                                    relative
-                                                    h-52
-                                                    overflow-hidden
-                                                    ${
-                                                        isLight
-                                                            ? "bg-slate-100"
-                                                            : "bg-slate-800"
-                                                    }
-                                                `}
-                                            >
-                                                {project.imageUrl ? (
-                                                    <img
-                                                        src={
-                                                            project.imageUrl
-                                                        }
-                                                        alt={
-                                                            project.title
-                                                        }
-                                                        className="
-                                                            h-full
-                                                            w-full
-                                                            object-cover
-                                                            transition
-                                                            duration-700
-                                                            group-hover:scale-105
-                                                        "
-                                                    />
-                                                ) : (
-                                                    <div className="flex h-full items-center justify-center bg-gradient-to-br from-sky-500/20 to-slate-900">
-                                                        <Code2 className="h-12 w-12 text-sky-400/50" />
+                                                <motion.div
+                                                    whileHover={{ scale: 1.025, y: -3 }}
+                                                    transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+                                                    className="absolute inset-5 overflow-hidden rounded-[22px] border border-white/10 bg-slate-900 shadow-2xl sm:inset-7"
+                                                >
+                                                    <div className="flex h-9 items-center gap-1.5 border-b border-white/10 bg-slate-950/90 px-4">
+                                                        <span className="h-2.5 w-2.5 rounded-full bg-red-400/70" />
+                                                        <span className="h-2.5 w-2.5 rounded-full bg-amber-400/70" />
+                                                        <span className="h-2.5 w-2.5 rounded-full bg-emerald-400/70" />
+                                                        <div className="mx-auto h-5 w-2/5 rounded-md border border-white/10 bg-white/[0.04]" />
                                                     </div>
-                                                )}
 
-                                                <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+                                                    {project.imageUrl ? (
+                                                        <img
+                                                            src={project.imageUrl}
+                                                            alt={`${project.title} project preview`}
+                                                            className="h-[calc(100%-36px)] w-full object-cover object-center transition duration-700 group-hover:scale-[1.035]"
+                                                        />
+                                                    ) : (
+                                                        <div className="flex h-[calc(100%-36px)] items-center justify-center bg-gradient-to-br from-sky-500/20 via-slate-900 to-slate-950">
+                                                            <Code2 className="h-16 w-16 text-sky-400/60" />
+                                                        </div>
+                                                    )}
 
-                                                <div className="absolute left-4 top-4">
-                                                    <span className="rounded-full border border-white/20 bg-black/40 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.15em] text-white backdrop-blur-md">
-                                                        {
-                                                            project.status
-                                                        }
-                                                    </span>
+                                                    <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/60 to-transparent" />
+                                                </motion.div>
+
+                                                <div className="absolute bottom-7 left-7 z-10 flex items-center gap-2 rounded-full border border-white/10 bg-black/45 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.16em] text-white backdrop-blur-xl">
+                                                    <Eye className="h-3 w-3" />
+                                                    Product preview
                                                 </div>
                                             </div>
 
-                                            <div className="p-5">
-                                                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-sky-500">
-                                                    {String(
-                                                        index +
-                                                            2,
-                                                    ).padStart(
-                                                        2,
-                                                        "0",
-                                                    )}
-                                                </p>
-
-                                                <h3
-                                                    className={`
-                                                        mt-2
-                                                        text-xl
-                                                        font-bold
-                                                        ${heading}
-                                                    `}
-                                                >
-                                                    {
-                                                        project.title
-                                                    }
-                                                </h3>
-
-                                                <p
-                                                    className={`
-                                                        mt-3
-                                                        line-clamp-3
-                                                        text-sm
-                                                        leading-6
-                                                        ${muted}
-                                                    `}
-                                                >
-                                                    {
-                                                        project.summary
-                                                    }
-                                                </p>
-
-                                                {tags.length >
-                                                    0 && (
-                                                    <div className="mt-4 flex flex-wrap gap-1.5">
-                                                        {tags
-                                                            .slice(
-                                                                0,
-                                                                4,
-                                                            )
-                                                            .map(
-                                                                (
-                                                                    tag,
-                                                                ) => (
-                                                                    <span
-                                                                        key={
-                                                                            tag
-                                                                        }
-                                                                        className={`
-                                                                            rounded-full
-                                                                            px-2.5
-                                                                            py-1
-                                                                            text-[9px]
-                                                                            uppercase
-                                                                            tracking-[0.12em]
-                                                                            ${tagClass}
-                                                                        `}
-                                                                    >
-                                                                        {
-                                                                            tag
-                                                                        }
-                                                                    </span>
-                                                                ),
-                                                            )}
+                                            <div className={`flex flex-col justify-between ${isFeatured ? "p-7 sm:p-10" : "p-7 sm:p-9"}`}>
+                                                <div>
+                                                    <div className="flex items-center gap-3">
+                                                        <span className="text-[10px] font-black uppercase tracking-[0.22em] text-sky-500">
+                                                            {String(index + 1).padStart(2, "0")}
+                                                        </span>
+                                                        <span className={`h-px w-8 ${isLight ? "bg-slate-200" : "bg-slate-700"}`} />
+                                                        <span className={`rounded-full border px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.14em] ${tagClass}`}>
+                                                            {project.status || "Build"}
+                                                        </span>
                                                     </div>
-                                                )}
 
-                                                {project.url && (
+                                                    <h3 className={`mt-7 text-3xl font-black leading-tight tracking-[-0.03em] ${heading} ${isFeatured ? "sm:text-4xl" : "sm:text-3xl"}`}>
+                                                        {project.title}
+                                                    </h3>
+
+                                                    <p className={`mt-4 max-w-xl text-sm leading-7 ${muted}`}>
+                                                        {project.summary}
+                                                    </p>
+
+                                                    {tags.length > 0 && (
+                                                        <div className="mt-6 flex flex-wrap gap-2">
+                                                            {tags.slice(0, isFeatured ? 7 : 5).map((tag) => (
+                                                                <span key={tag} className={`rounded-full border px-3 py-1.5 text-[9px] font-semibold uppercase tracking-[0.13em] ${tagClass}`}>
+                                                                    {tag}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                <div className="mt-9 flex flex-wrap items-center gap-3 border-t border-slate-200/60 pt-6 dark:border-slate-800/70">
                                                     <a
-                                                        href={
-                                                            project.url
-                                                        }
-                                                        target="_blank"
-                                                        rel="noreferrer"
-                                                        className="
-                                                            group/link
-                                                            mt-5
-                                                            inline-flex
-                                                            items-center
-                                                            gap-2
-                                                            text-xs
-                                                            font-bold
-                                                            text-sky-500
-                                                            transition
-                                                            hover:text-sky-400
-                                                        "
+                                                        href={`/projects/${project.slug}`}
+                                                        className="group/link inline-flex items-center gap-2 rounded-full bg-slate-950 px-4 py-2.5 text-xs font-bold text-white transition hover:-translate-y-0.5 hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200"
                                                     >
-                                                        View project
-
-                                                        <ArrowRight className="h-3.5 w-3.5 transition group-hover/link:translate-x-1" />
+                                                        Case study
+                                                        <ArrowUpRight className="h-3.5 w-3.5 transition group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5" />
                                                     </a>
-                                                )}
+
+                                                    {hasLiveUrl ? (
+                                                        <a
+                                                            href={project.url!}
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                            className="group/link inline-flex items-center gap-2 rounded-full bg-sky-500 px-4 py-2.5 text-xs font-bold text-slate-950 transition hover:-translate-y-0.5 hover:bg-sky-400"
+                                                        >
+                                                            Live demo
+                                                            <ExternalLink className="h-3.5 w-3.5 transition group-hover/link:translate-x-0.5" />
+                                                        </a>
+                                                    ) : (
+                                                        <span className={`inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-xs font-semibold ${tagClass}`}>
+                                                            <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                                                            Not deployed yet
+                                                        </span>
+                                                    )}
+
+                                                    {hasGithub && (
+                                                        <a
+                                                            href={project.githubUrl!}
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                            className={`inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-xs font-bold transition hover:-translate-y-0.5 ${secondaryButton}`}
+                                                        >
+                                                            {/* <Github className="h-3.5 w-3.5" /> */}
+                                                            Source code
+                                                        </a>
+                                                    )}
+                                                </div>
                                             </div>
-                                        </motion.article>
-                                    );
-                                },
-                            )}
+                                        </div>
+                                    </motion.article>
+                                );
+                            })}
                         </div>
                     )}
 
@@ -2015,35 +1757,92 @@ export function PortfolioLanding({
                         <div className="mt-10 flex justify-center">
                             <motion.button
                                 type="button"
-                                whileHover={{
-                                    y: -2,
-                                }}
-                                whileTap={{
-                                    scale: 0.98,
-                                }}
-                                onClick={() =>
-                                    setShowAllProjects(
-                                        (current) =>
-                                            !current,
-                                    )
-                                }
-                                className={`
-                                    rounded-full
-                                    border
-                                    px-6
-                                    py-3
-                                    text-sm
-                                    font-semibold
-                                    transition
-                                    ${secondaryButton}
-                                `}
+                                whileHover={{ y: -2 }}
+                                whileTap={{ scale: 0.98 }}
+                                onClick={() => setShowAllProjects((current) => !current)}
+                                className={`rounded-full border px-6 py-3 text-sm font-semibold transition ${secondaryButton}`}
                             >
-                                {showAllProjects
-                                    ? "Show less"
-                                    : `Show all ${projects.length} projects`}
+                                {showAllProjects ? "Show less" : `Show all ${projects.length} projects`}
                             </motion.button>
                         </div>
                     )}
+                </div>
+            </section>
+
+            {/* =====================================================
+                AI ASSISTANT SHOWCASE
+            ====================================================== */}
+
+            <section className="relative overflow-hidden border-y border-slate-200/60 dark:border-slate-800/60">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_30%,rgba(14,165,233,0.12),transparent_30%),radial-gradient(circle_at_85%_70%,rgba(99,102,241,0.10),transparent_28%)]" />
+
+                <div className="relative mx-auto grid max-w-7xl gap-10 px-6 py-20 lg:grid-cols-[1fr_0.9fr] lg:items-center lg:py-24">
+                    <motion.div
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{ once: true, amount: 0.2 }}
+                        variants={sectionReveal}
+                    >
+                        <div className="mb-5 flex items-center gap-3">
+                            <span className="h-px w-10 bg-sky-500" />
+                            <p className="text-xs font-bold uppercase tracking-[0.28em] text-sky-500">
+                                Built into the portfolio
+                            </p>
+                        </div>
+
+                        <h2 className={`max-w-3xl text-4xl font-black leading-[0.98] tracking-[-0.04em] sm:text-5xl ${heading}`}>
+                            Don&apos;t just read my portfolio.
+                            <br />
+                            <span className="text-sky-500">Ask it.</span>
+                        </h2>
+
+                        <p className={`mt-5 max-w-2xl text-sm leading-7 sm:text-base ${muted}`}>
+                            My AI portfolio assistant can help visitors explore my skills, projects, experience and the kind of products I build.
+                        </p>
+
+                        <div className="mt-7 flex flex-wrap gap-3">
+                            <button
+                                type="button"
+                                onClick={openChat}
+                                className="group inline-flex items-center gap-2 rounded-full bg-sky-500 px-5 py-3 text-sm font-bold text-slate-950 shadow-xl shadow-sky-500/15 transition hover:-translate-y-0.5 hover:bg-sky-400"
+                            >
+                                <Bot className="h-4 w-4" />
+                                Start a conversation
+                                <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
+                            </button>
+                        </div>
+                    </motion.div>
+
+                    <motion.div
+                        initial={{ opacity: 0, y: 24, rotate: 1 }}
+                        whileInView={{ opacity: 1, y: 0, rotate: 0 }}
+                        viewport={{ once: true, amount: 0.2 }}
+                        transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+                        className={`relative overflow-hidden rounded-[28px] border p-5 shadow-2xl ${panel}`}
+                    >
+                        <div className="flex items-center gap-3 border-b border-slate-200/70 pb-4 dark:border-slate-800/70">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-sky-500 text-white shadow-lg shadow-sky-500/20">
+                                <Bot className="h-5 w-5" />
+                            </div>
+                            <div>
+                                <p className={`text-sm font-black ${heading}`}>Portfolio AI</p>
+                                <p className="text-xs text-emerald-500">Online � Ready to answer</p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-3 py-5">
+                            <div className="ml-auto max-w-[82%] rounded-2xl rounded-br-md bg-sky-500 px-4 py-3 text-sm font-medium text-slate-950">
+                                What kind of products can you build?
+                            </div>
+                            <div className={`max-w-[88%] rounded-2xl rounded-bl-md border px-4 py-3 text-sm leading-6 ${softPanel}`}>
+                                Full-stack web apps, SaaS dashboards, business platforms and AI-powered experiences � with a focus on usability, performance and maintainable architecture.
+                            </div>
+                        </div>
+
+                        <div className={`rounded-2xl border px-4 py-3 text-xs ${tagClass}`}>
+                            Try asking about projects, skills, architecture or experience ?
+                        </div>
+                    </motion.div>
                 </div>
             </section>
 
@@ -2719,7 +2518,7 @@ export function PortfolioLanding({
                             </p>
 
                             <motion.a
-                                href="mailto:azulrio906top@gmail.com"
+                                href={profile.email ? `mailto:${profile.email}` : "#contact"}
                                 whileHover={{
                                     y: -2,
                                     scale: 1.01,
@@ -2746,7 +2545,7 @@ export function PortfolioLanding({
                             >
                                 <Mail className="h-4 w-4" />
 
-                                azulrio906top@gmail.com
+                                {profile.email || "Start a conversation"}
 
                                 <ArrowRight className="h-4 w-4" />
                             </motion.a>
@@ -2769,7 +2568,7 @@ export function PortfolioLanding({
                                 ${heading}
                             `}
                         >
-                            FLUNCO RUIZ
+                            {profile.name}
                         </p>
 
                         <p
@@ -2779,8 +2578,7 @@ export function PortfolioLanding({
                                 ${muted}
                             `}
                         >
-                            Full-stack developer & product
-                            designer.
+                            {profile.title}.
                         </p>
                     </div>
 

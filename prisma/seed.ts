@@ -76,10 +76,10 @@ async function main() {
                 "Full-Stack Developer & Product Designer",
 
             headline:
-                "I build digital products that move businesses forward.",
+                "Building intelligent digital products with Full-Stack + AI.",
 
             bio:
-                "Full-stack developer and product designer helping startups and growing businesses turn ideas into fast, elegant and production-ready software.",
+                "Full-stack developer and product builder creating polished web applications, business platforms and AI-powered experiences with a strong focus on usability, performance and maintainable engineering.",
 
             email:
                 "azulrio906top@gmail.com",
@@ -103,10 +103,10 @@ async function main() {
                 "Full-Stack Developer & Product Designer",
 
             headline:
-                "I build digital products that move businesses forward.",
+                "Building intelligent digital products with Full-Stack + AI.",
 
             bio:
-                "Full-stack developer and product designer helping startups and growing businesses turn ideas into fast, elegant and production-ready software.",
+                "Full-stack developer and product builder creating polished web applications, business platforms and AI-powered experiences with a strong focus on usability, performance and maintainable engineering.",
 
             email:
                 "azulrio906top@gmail.com",
@@ -340,7 +340,7 @@ async function main() {
             githubUrl: null,
 
             imageUrl:
-                "/projects/ai-portfolio-assistant.webp",
+                "/projects/ai-portfolio-assistant.svg",
 
             featured: true,
 
@@ -368,7 +368,7 @@ async function main() {
             githubUrl: null,
 
             imageUrl:
-                "/projects/saas-dashboard.webp",
+                "/projects/saas-dashboard.svg",
 
             featured: false,
 
@@ -396,7 +396,7 @@ async function main() {
             githubUrl: null,
 
             imageUrl:
-                "/projects/business-platform.webp",
+                "/projects/business-platform.svg",
 
             featured: false,
 
@@ -424,7 +424,7 @@ async function main() {
             githubUrl: null,
 
             imageUrl:
-                "/projects/ai-automation.webp",
+                "/projects/ai-automation.svg",
 
             featured: false,
 
@@ -452,7 +452,7 @@ async function main() {
             githubUrl: null,
 
             imageUrl:
-                "/projects/portfolio-platform.webp",
+                "/projects/portfolio-platform.svg",
 
             featured: false,
 
