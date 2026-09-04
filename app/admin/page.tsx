@@ -1,91 +1,104 @@
-import { auth } from '@/auth';
-import { redirect } from 'next/navigation';
-import { ensureDatabase, prisma } from '@/lib/db';
-import { SignOutButton } from '@/components/signout-button';
-import { ThemeToggle } from '@/components/theme-toggle';
-import { AdminDashboard } from '@/components/admin-dashboard';
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
+
+import { ensureDatabase, prisma } from "@/lib/db";
+
+import { AdminDashboard } from "@/components/admin-dashboard";
+
 import {
+    createExperience,
     createProject,
     createSkill,
+    deleteExperience,
     deleteProject,
     deleteSkill,
+    updateExperience,
+    updateProfile,
     updateProject,
     updateSkill,
-    updateProfile,
-    createExperience,
-    updateExperience,
-    deleteExperience,
-} from './actions';
+} from "./actions";
 
-function isMissingTableError(error: unknown) {
+function isMissingTableError(error: unknown): boolean {
     return (
-        typeof error === 'object' &&
+        typeof error === "object" &&
         error !== null &&
-        'code' in error &&
-        error.code === 'P2021'
+        "code" in error &&
+        error.code === "P2021"
     );
+}
+
+async function loadProfile() {
+    try {
+        return await prisma.profile.findFirst({
+            orderBy: {
+                id: "asc",
+            },
+        });
+    } catch (error) {
+        if (isMissingTableError(error)) {
+            return null;
+        }
+
+        throw error;
+    }
+}
+
+async function loadSkills() {
+    try {
+        return await prisma.skill.findMany({
+            orderBy: {
+                order: "asc",
+            },
+        });
+    } catch (error) {
+        if (isMissingTableError(error)) {
+            return [];
+        }
+
+        throw error;
+    }
+}
+
+async function loadProjects() {
+    try {
+        return await prisma.project.findMany({
+            orderBy: {
+                createdAt: "desc",
+            },
+        });
+    } catch (error) {
+        if (isMissingTableError(error)) {
+            return [];
+        }
+
+        throw error;
+    }
+}
+
+async function loadExperience() {
+    try {
+        return await prisma.experience.findMany({
+            orderBy: {
+                startDate: "desc",
+            },
+        });
+    } catch (error) {
+        if (isMissingTableError(error)) {
+            return [];
+        }
+
+        throw error;
+    }
 }
 
 export default async function AdminPage() {
     const session = await auth();
 
     if (!session?.user) {
-        redirect('/admin/login');
+        redirect("/admin/login");
     }
 
     await ensureDatabase();
-
-    const loadProfile = async () => {
-        try {
-            return await prisma.profile.findFirst({
-                orderBy: { id: 'asc' },
-            });
-        } catch (error) {
-            if (isMissingTableError(error)) {
-                return null;
-            }
-
-            throw error;
-        }
-    };
-
-    const loadExperience = async () => {
-        try {
-            return await prisma.experience.findMany({
-                orderBy: {
-                    startDate: 'desc',
-                },
-            });
-        } catch (error) {
-            if (isMissingTableError(error)) {
-                return [];
-            }
-
-            throw error;
-        }
-    };
-
-    const loadSkills = async () => {
-        try {
-            return await prisma.skill.findMany({ orderBy: { order: 'asc' } });
-        } catch (error) {
-            if (isMissingTableError(error)) {
-                return [] as Array<{ id: number; name: string; category: string; order: number }>;
-            }
-            throw error;
-        }
-    };
-
-    const loadProjects = async () => {
-        try {
-            return await prisma.project.findMany({ orderBy: { createdAt: 'desc' } });
-        } catch (error) {
-            if (isMissingTableError(error)) {
-                return [] as Array<{ id: number; title: string; slug: string; status: string; summary: string; url?: string | null; githubUrl?: string | null; imageUrl?: string | null; tags: string; featured: boolean; description: string }>;
-            }
-            throw error;
-        }
-    };
 
     const [
         profile,
@@ -100,7 +113,7 @@ export default async function AdminPage() {
     ]);
 
     return (
-        <div className="mx-auto">
+        <main className="min-h-screen bg-slate-50">
             <AdminDashboard
                 profile={profile}
                 skills={skills}
@@ -113,10 +126,16 @@ export default async function AdminPage() {
                 createProjectAction={createProject}
                 updateProjectAction={updateProject}
                 deleteProjectAction={deleteProject}
-                createExperienceAction={createExperience}
-                updateExperienceAction={updateExperience}
-                deleteExperienceAction={deleteExperience}
+                createExperienceAction={
+                    createExperience
+                }
+                updateExperienceAction={
+                    updateExperience
+                }
+                deleteExperienceAction={
+                    deleteExperience
+                }
             />
-        </div>
+        </main>
     );
 }

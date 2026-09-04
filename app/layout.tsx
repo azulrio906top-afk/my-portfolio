@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "My Portfolio",
-  description: "Portfolio site built with Next.js, Tailwind CSS, Prisma, and SQLite",
+  description: "Portfolio of Full-stack developer specializing in React, Next.js, TypeScript, Node.js, Prisma, and AI-powered applications.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

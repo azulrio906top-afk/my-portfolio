@@ -13,19 +13,45 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
     Bot,
     Check,
+    Copy,
     RotateCcw,
     Send,
     Sparkles,
+    ThumbsDown,
+    ThumbsUp,
     X,
 } from "lucide-react";
 
+/*
+|--------------------------------------------------------------------------
+| Types
+|--------------------------------------------------------------------------
+*/
+
+type MessageRole = "user" | "assistant";
+
 type Message = {
     id: string;
-    role: "user" | "assistant";
+    role: MessageRole;
+    content: string;
+    error?: boolean;
+};
+
+type ChatHistoryItem = {
+    role: MessageRole;
     content: string;
 };
 
-const CLYDE_IMAGE = "https://cdn.prod.website-files.com/6257adef93867e50d84d30e2/6707a0ea5ddb44cae1dd6b29_clyde_pose_02%201.webp";
+/*
+|--------------------------------------------------------------------------
+| Configuration
+|--------------------------------------------------------------------------
+*/
+
+const CLYDE_IMAGE =
+    "https://cdn.prod.website-files.com/6257adef93867e50d84d30e2/6707a0ea5ddb44cae1dd6b29_clyde_pose_02%201.webp";
+
+const MAX_MESSAGE_LENGTH = 1000;
 
 const suggestions = [
     "What are your main skills?",
@@ -41,6 +67,12 @@ const welcomeMessage: Message = {
         "Hi! I'm the portfolio assistant. Ask me about Flunco's skills, projects, experience, or what he can build for your business.",
 };
 
+/*
+|--------------------------------------------------------------------------
+| Animation
+|--------------------------------------------------------------------------
+*/
+
 const launcherTransition = {
     type: "spring" as const,
     stiffness: 260,
@@ -51,6 +83,12 @@ const messageTransition = {
     duration: 0.28,
     ease: [0.16, 1, 0.3, 1] as const,
 };
+
+/*
+|--------------------------------------------------------------------------
+| Bot Avatar
+|--------------------------------------------------------------------------
+*/
 
 function BotAvatar({
     size = "md",
@@ -97,6 +135,12 @@ function BotAvatar({
     );
 }
 
+/*
+|--------------------------------------------------------------------------
+| Typing Indicator
+|--------------------------------------------------------------------------
+*/
+
 function TypingIndicator() {
     return (
         <div className="flex items-end gap-2">
@@ -113,6 +157,7 @@ function TypingIndicator() {
                     py-3
                     shadow-sm
                 "
+                aria-label="Assistant is typing"
             >
                 <div className="flex items-center gap-1.5">
                     {[0, 120, 240].map((delay) => (
@@ -127,7 +172,12 @@ function TypingIndicator() {
                                 repeat: Infinity,
                                 delay: delay / 1000,
                             }}
-                            className="h-1.5 w-1.5 rounded-full bg-slate-400"
+                            className="
+                                h-1.5
+                                w-1.5
+                                rounded-full
+                                bg-slate-400
+                            "
                         />
                     ))}
                 </div>
@@ -136,22 +186,206 @@ function TypingIndicator() {
     );
 }
 
+/*
+|--------------------------------------------------------------------------
+| Assistant Message Renderer
+|--------------------------------------------------------------------------
+|
+| Lightweight Markdown-style rendering.
+| This avoids adding another dependency.
+|
+*/
+
+function renderAssistantContent(content: string) {
+    const lines = content.split("\n");
+
+    return lines.map((line, index) => {
+        const trimmed = line.trim();
+
+        if (!trimmed) {
+            return (
+                <div
+                    key={`space-${index}`}
+                    className="h-2"
+                />
+            );
+        }
+
+        /*
+         * Bullet list
+         */
+        if (
+            trimmed.startsWith("- ") ||
+            trimmed.startsWith("* ")
+        ) {
+            const text = trimmed.slice(2);
+
+            return (
+                <div
+                    key={index}
+                    className="flex gap-2"
+                >
+                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-sky-400" />
+
+                    <span>
+                        {renderInlineText(text)}
+                    </span>
+                </div>
+            );
+        }
+
+        /*
+         * Numbered list
+         */
+        const numberedMatch =
+            trimmed.match(/^(\d+)\.\s+(.*)$/);
+
+        if (numberedMatch) {
+            return (
+                <div
+                    key={index}
+                    className="flex gap-2"
+                >
+                    <span className="shrink-0 font-semibold text-sky-500">
+                        {numberedMatch[1]}.
+                    </span>
+
+                    <span>
+                        {renderInlineText(
+                            numberedMatch[2],
+                        )}
+                    </span>
+                </div>
+            );
+        }
+
+        /*
+         * Heading
+         */
+        if (trimmed.startsWith("### ")) {
+            return (
+                <p
+                    key={index}
+                    className="
+                        mt-2
+                        font-bold
+                        text-slate-900
+                    "
+                >
+                    {renderInlineText(
+                        trimmed.slice(4),
+                    )}
+                </p>
+            );
+        }
+
+        /*
+         * Normal paragraph
+         */
+        return (
+            <p key={index}>
+                {renderInlineText(trimmed)}
+            </p>
+        );
+    });
+}
+
+/*
+|--------------------------------------------------------------------------
+| Inline text renderer
+|--------------------------------------------------------------------------
+|
+| Supports:
+| - **bold**
+| - URLs
+|
+*/
+
+function renderInlineText(text: string) {
+    const parts = text.split(
+        /(https?:\/\/[^\s]+|\*\*[^*]+\*\*)/g,
+    );
+
+    return parts.map((part, index) => {
+        if (
+            part.startsWith("http://") ||
+            part.startsWith("https://")
+        ) {
+            const cleanUrl = part.replace(
+                /[),.!?]+$/,
+                "",
+            );
+
+            return (
+                <a
+                    key={index}
+                    href={cleanUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="
+                        font-medium
+                        text-sky-500
+                        underline
+                        underline-offset-2
+                        hover:text-sky-600
+                    "
+                >
+                    {cleanUrl}
+                </a>
+            );
+        }
+
+        if (
+            part.startsWith("**") &&
+            part.endsWith("**")
+        ) {
+            return (
+                <strong
+                    key={index}
+                    className="font-semibold text-slate-900"
+                >
+                    {part.slice(2, -2)}
+                </strong>
+            );
+        }
+
+        return (
+            <span key={index}>
+                {part}
+            </span>
+        );
+    });
+}
+
+/*
+|--------------------------------------------------------------------------
+| Main Chatbot
+|--------------------------------------------------------------------------
+*/
+
 export default function PortfolioChatbot() {
     const [open, setOpen] = useState(false);
 
-    const [messages, setMessages] = useState<Message[]>([
-        welcomeMessage,
-    ]);
+    const [messages, setMessages] = useState<
+        Message[]
+    >([welcomeMessage]);
 
     const [input, setInput] = useState("");
 
     const [loading, setLoading] = useState(false);
 
-    const inputRef = useRef<HTMLInputElement>(null);
-    const bottomRef = useRef<HTMLDivElement>(null);
+    const [copiedId, setCopiedId] = useState<
+        string | null
+    >(null);
+
+    const inputRef =
+        useRef<HTMLTextAreaElement>(null);
+
+    const bottomRef =
+        useRef<HTMLDivElement>(null);
 
     /*
-     * Keep the newest message visible.
+     * Scroll to newest message.
      */
     useEffect(() => {
         bottomRef.current?.scrollIntoView({
@@ -161,7 +395,7 @@ export default function PortfolioChatbot() {
     }, [messages, loading]);
 
     /*
-     * Focus the input whenever the chatbot opens.
+     * Focus input when chatbot opens.
      */
     useEffect(() => {
         if (!open) {
@@ -172,15 +406,19 @@ export default function PortfolioChatbot() {
             inputRef.current?.focus();
         }, 250);
 
-        return () => window.clearTimeout(timer);
+        return () => {
+            window.clearTimeout(timer);
+        };
     }, [open]);
 
     /*
-     * Prevent the page behind the chatbot from scrolling
-     * on very small screens while the window is open.
+     * Lock background scrolling on mobile.
      */
     useEffect(() => {
-        if (!open || window.innerWidth >= 640) {
+        if (
+            !open ||
+            window.innerWidth >= 640
+        ) {
             return;
         }
 
@@ -196,9 +434,11 @@ export default function PortfolioChatbot() {
     }, [open]);
 
     /*
-     * Send a message to the existing API.
+     * Send message.
      */
-    async function sendMessage(customMessage?: string) {
+    async function sendMessage(
+        customMessage?: string,
+    ) {
         const text =
             customMessage !== undefined
                 ? customMessage.trim()
@@ -208,17 +448,36 @@ export default function PortfolioChatbot() {
             return;
         }
 
+        const safeText =
+            text.slice(
+                0,
+                MAX_MESSAGE_LENGTH,
+            );
+
+        /*
+         * Save history BEFORE current user message.
+         */
+        const history: ChatHistoryItem[] =
+            messages
+                .filter(
+                    (message) =>
+                        !message.error,
+                )
+                .map(
+                    ({
+                        role,
+                        content,
+                    }) => ({
+                        role,
+                        content,
+                    }),
+                );
+
         const userMessage: Message = {
             id: crypto.randomUUID(),
             role: "user",
-            content: text,
+            content: safeText,
         };
-
-        /*
-         * Capture history before adding the current message.
-         * This preserves your existing API behavior.
-         */
-        const history = messages;
 
         setMessages((current) => [
             ...current,
@@ -229,34 +488,53 @@ export default function PortfolioChatbot() {
         setLoading(true);
 
         try {
-            const response = await fetch("/api/chat", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
+            const response = await fetch(
+                "/api/chat",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type":
+                            "application/json",
+                    },
+                    body: JSON.stringify({
+                        message: safeText,
+                        history,
+                    }),
                 },
-                body: JSON.stringify({
-                    message: text,
-                    history: history.map(
-                        ({ role, content }) => ({
-                            role,
-                            content,
-                        }),
-                    ),
-                }),
-            });
+            );
 
-            const data = await response.json();
+            let data: {
+                answer?: unknown;
+                error?: unknown;
+            };
+
+            try {
+                data =
+                    await response.json();
+            } catch {
+                data = {};
+            }
 
             if (!response.ok) {
                 throw new Error(
-                    data.error || "Request failed",
+                    typeof data.error ===
+                        "string"
+                        ? data.error
+                        : "Request failed.",
                 );
             }
 
             const answer =
-                typeof data.answer === "string"
-                    ? data.answer
-                    : "I couldn't generate an answer right now.";
+                typeof data.answer ===
+                "string"
+                    ? data.answer.trim()
+                    : "";
+
+            if (!answer) {
+                throw new Error(
+                    "The assistant returned an empty response.",
+                );
+            }
 
             setMessages((current) => [
                 ...current,
@@ -267,15 +545,19 @@ export default function PortfolioChatbot() {
                 },
             ]);
         } catch (error) {
-            console.error("Chat error:", error);
+            console.error(
+                "Portfolio chatbot error:",
+                error,
+            );
 
             setMessages((current) => [
                 ...current,
                 {
                     id: crypto.randomUUID(),
                     role: "assistant",
+                    error: true,
                     content:
-                        "Sorry, I couldn't answer that right now. Please try again or contact Flunco directly.",
+                        "Sorry, I couldn't answer that right now. Please try again.",
                 },
             ]);
         } finally {
@@ -288,7 +570,7 @@ export default function PortfolioChatbot() {
     }
 
     /*
-     * Clear the conversation.
+     * Clear conversation.
      */
     function clearChat() {
         if (loading) {
@@ -303,6 +585,7 @@ export default function PortfolioChatbot() {
         ]);
 
         setInput("");
+        setCopiedId(null);
 
         window.setTimeout(() => {
             inputRef.current?.focus();
@@ -310,7 +593,84 @@ export default function PortfolioChatbot() {
     }
 
     /*
-     * Submit input form.
+     * Retry last failed assistant response.
+     */
+    function retryLastMessage() {
+        if (loading) {
+            return;
+        }
+
+        const lastUserMessage =
+            [...messages]
+                .reverse()
+                .find(
+                    (message) =>
+                        message.role ===
+                        "user",
+                );
+
+        if (!lastUserMessage) {
+            return;
+        }
+
+        /*
+         * Remove the error message.
+         */
+        setMessages((current) => {
+            const lastErrorIndex =
+                current.findLastIndex(
+                    (message) =>
+                        message.error,
+                );
+
+            if (
+                lastErrorIndex === -1
+            ) {
+                return current;
+            }
+
+            return current.filter(
+                (_, index) =>
+                    index !==
+                    lastErrorIndex,
+            );
+        });
+
+        void sendMessage(
+            lastUserMessage.content,
+        );
+    }
+
+    /*
+     * Copy assistant response.
+     */
+    async function copyMessage(
+        message: Message,
+    ) {
+        try {
+            await navigator.clipboard.writeText(
+                message.content,
+            );
+
+            setCopiedId(message.id);
+
+            window.setTimeout(() => {
+                setCopiedId((current) =>
+                    current === message.id
+                        ? null
+                        : current,
+                );
+            }, 1500);
+        } catch (error) {
+            console.error(
+                "Copy failed:",
+                error,
+            );
+        }
+    }
+
+    /*
+     * Submit form.
      */
     function handleSubmit(
         event: FormEvent<HTMLFormElement>,
@@ -321,11 +681,16 @@ export default function PortfolioChatbot() {
     }
 
     /*
-     * Enter sends the message.
-     * Shift + Enter remains available for future textarea use.
+     * Keyboard behavior.
+     *
+     * Enter:
+     * send
+     *
+     * Shift + Enter:
+     * new line
      */
     function handleKeyDown(
-        event: KeyboardEvent<HTMLInputElement>,
+        event: KeyboardEvent<HTMLTextAreaElement>,
     ) {
         if (
             event.key === "Enter" &&
@@ -337,11 +702,40 @@ export default function PortfolioChatbot() {
         }
     }
 
+    /*
+     * Auto-grow textarea.
+     */
+    function handleInputChange(
+        value: string,
+    ) {
+        setInput(
+            value.slice(
+                0,
+                MAX_MESSAGE_LENGTH,
+            ),
+        );
+
+        const textarea =
+            inputRef.current;
+
+        if (!textarea) {
+            return;
+        }
+
+        textarea.style.height = "auto";
+
+        textarea.style.height =
+            `${Math.min(
+                textarea.scrollHeight,
+                120,
+            )}px`;
+    }
+
     return (
         <>
-            {/* =====================================================
+            {/* =========================================================
                 FLOATING LAUNCHER
-            ====================================================== */}
+            ========================================================== */}
 
             <AnimatePresence>
                 {!open && (
@@ -363,7 +757,12 @@ export default function PortfolioChatbot() {
                         }}
                         transition={{
                             duration: 0.3,
-                            ease: [0.16, 1, 0.3, 1],
+                            ease: [
+                                0.16,
+                                1,
+                                0.3,
+                                1,
+                            ],
                         }}
                         className="
                             fixed
@@ -377,14 +776,18 @@ export default function PortfolioChatbot() {
                     >
                         <motion.button
                             type="button"
-                            onClick={() => setOpen(true)}
+                            onClick={() =>
+                                setOpen(true)
+                            }
                             whileHover={{
                                 scale: 1.06,
                             }}
                             whileTap={{
                                 scale: 0.94,
                             }}
-                            transition={launcherTransition}
+                            transition={
+                                launcherTransition
+                            }
                             className="
                                 group
                                 relative
@@ -413,11 +816,13 @@ export default function PortfolioChatbot() {
                             "
                             aria-label="Open portfolio assistant"
                         >
-                            {/* Soft ambient glow */}
-
                             <motion.div
                                 animate={{
-                                    scale: [1, 1.08, 1],
+                                    scale: [
+                                        1,
+                                        1.08,
+                                        1,
+                                    ],
                                     opacity: [
                                         0.18,
                                         0.3,
@@ -426,7 +831,8 @@ export default function PortfolioChatbot() {
                                 }}
                                 transition={{
                                     duration: 3,
-                                    repeat: Infinity,
+                                    repeat:
+                                        Infinity,
                                     ease: "easeInOut",
                                 }}
                                 className="
@@ -438,8 +844,6 @@ export default function PortfolioChatbot() {
                                     blur-2xl
                                 "
                             />
-
-                            {/* Avatar */}
 
                             <div
                                 className="
@@ -453,7 +857,9 @@ export default function PortfolioChatbot() {
                                 "
                             >
                                 <img
-                                    src={CLYDE_IMAGE}
+                                    src={
+                                        CLYDE_IMAGE
+                                    }
                                     alt="Portfolio AI assistant"
                                     className="
                                         h-full
@@ -465,8 +871,6 @@ export default function PortfolioChatbot() {
                                     "
                                 />
                             </div>
-
-                            {/* AI badge */}
 
                             <span
                                 className="
@@ -494,8 +898,6 @@ export default function PortfolioChatbot() {
                                 AI
                             </span>
 
-                            {/* Online dot */}
-
                             <motion.span
                                 animate={{
                                     boxShadow: [
@@ -505,7 +907,8 @@ export default function PortfolioChatbot() {
                                 }}
                                 transition={{
                                     duration: 1.8,
-                                    repeat: Infinity,
+                                    repeat:
+                                        Infinity,
                                 }}
                                 className="
                                     absolute
@@ -521,8 +924,6 @@ export default function PortfolioChatbot() {
                                 "
                                 aria-label="Online"
                             />
-
-                            {/* Hover label */}
 
                             <span
                                 className="
@@ -561,9 +962,9 @@ export default function PortfolioChatbot() {
                 )}
             </AnimatePresence>
 
-            {/* =====================================================
+            {/* =========================================================
                 CHAT WINDOW
-            ====================================================== */}
+            ========================================================== */}
 
             <AnimatePresence>
                 {open && (
@@ -585,7 +986,12 @@ export default function PortfolioChatbot() {
                         }}
                         transition={{
                             duration: 0.28,
-                            ease: [0.16, 1, 0.3, 1],
+                            ease: [
+                                0.16,
+                                1,
+                                0.3,
+                                1,
+                            ],
                         }}
                         className="
                             fixed
@@ -629,8 +1035,6 @@ export default function PortfolioChatbot() {
                                 text-white
                             "
                         >
-                            {/* Header glow */}
-
                             <div
                                 className="
                                     pointer-events-none
@@ -661,8 +1065,6 @@ export default function PortfolioChatbot() {
 
                             <div className="relative flex items-center justify-between gap-4">
                                 <div className="flex min-w-0 items-center gap-3">
-                                    {/* Avatar */}
-
                                     <div
                                         className="
                                             flex
@@ -703,13 +1105,15 @@ export default function PortfolioChatbot() {
                                     </div>
                                 </div>
 
-                                {/* Header controls */}
-
                                 <div className="relative flex shrink-0 items-center gap-1">
                                     <button
                                         type="button"
-                                        onClick={clearChat}
-                                        disabled={loading}
+                                        onClick={
+                                            clearChat
+                                        }
+                                        disabled={
+                                            loading
+                                        }
                                         className="
                                             rounded-xl
                                             p-2
@@ -729,7 +1133,9 @@ export default function PortfolioChatbot() {
                                     <button
                                         type="button"
                                         onClick={() =>
-                                            setOpen(false)
+                                            setOpen(
+                                                false,
+                                            )
                                         }
                                         className="
                                             rounded-xl
@@ -767,8 +1173,6 @@ export default function PortfolioChatbot() {
                                 [scrollbar-width:thin]
                             "
                         >
-                            {/* Welcome helper */}
-
                             {messages.length === 1 && (
                                 <div className="mb-5 flex items-center justify-center">
                                     <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-400 shadow-sm">
@@ -779,74 +1183,204 @@ export default function PortfolioChatbot() {
                             )}
 
                             <AnimatePresence initial={false}>
-                                {messages.map((message) => {
-                                    const isUser =
-                                        message.role === "user";
+                                {messages.map(
+                                    (message) => {
+                                        const isUser =
+                                            message.role ===
+                                            "user";
 
-                                    return (
-                                        <motion.div
-                                            key={message.id}
-                                            initial={{
-                                                opacity: 0,
-                                                y: 10,
-                                                scale: 0.98,
-                                            }}
-                                            animate={{
-                                                opacity: 1,
-                                                y: 0,
-                                                scale: 1,
-                                            }}
-                                            transition={
-                                                messageTransition
-                                            }
-                                            className={`flex ${
-                                                isUser
-                                                    ? "justify-end"
-                                                    : "justify-start"
-                                            }`}
-                                        >
-                                            {!isUser && (
-                                                <div className="mr-2 mt-1">
-                                                    <BotAvatar size="sm" />
-                                                </div>
-                                            )}
-
-                                            <div
-                                                className={`
-                                                    max-w-[82%]
-                                                    rounded-2xl
-                                                    px-4
-                                                    py-3
-                                                    text-sm
-                                                    leading-6
-                                                    ${
-                                                        isUser
-                                                            ? `
-                                                                rounded-br-md
-                                                                bg-sky-500
-                                                                text-white
-                                                                shadow-sm
-                                                            `
-                                                            : `
-                                                                rounded-bl-md
-                                                                border
-                                                                border-slate-200
-                                                                bg-white
-                                                                text-slate-700
-                                                                shadow-sm
-                                                            `
-                                                    }
-                                                `}
+                                        return (
+                                            <motion.div
+                                                key={
+                                                    message.id
+                                                }
+                                                initial={{
+                                                    opacity: 0,
+                                                    y: 10,
+                                                    scale: 0.98,
+                                                }}
+                                                animate={{
+                                                    opacity: 1,
+                                                    y: 0,
+                                                    scale: 1,
+                                                }}
+                                                transition={
+                                                    messageTransition
+                                                }
+                                                className={`group flex ${
+                                                    isUser
+                                                        ? "justify-end"
+                                                        : "justify-start"
+                                                }`}
                                             >
-                                                <p className="whitespace-pre-wrap break-words">
-                                                    {
-                                                        message.content
-                                                    }
-                                                </p>
-                                            </div>
-                                        </motion.div>
-                                    );
-                                })}
+                                                {!isUser && (
+                                                    <div className="mr-2 mt-1">
+                                                        <BotAvatar size="sm" />
+                                                    </div>
+                                                )}
+
+                                                <div
+                                                    className={`
+                                                        max-w-[82%]
+                                                        ${
+                                                            !isUser &&
+                                                            "flex flex-col"
+                                                        }
+                                                    `}
+                                                >
+                                                    <div
+                                                        className={`
+                                                            rounded-2xl
+                                                            px-4
+                                                            py-3
+                                                            text-sm
+                                                            leading-6
+
+                                                            ${
+                                                                isUser
+                                                                    ? `
+                                                                        rounded-br-md
+                                                                        bg-sky-500
+                                                                        text-white
+                                                                        shadow-sm
+                                                                    `
+                                                                    : `
+                                                                        rounded-bl-md
+                                                                        border
+                                                                        ${
+                                                                            message.error
+                                                                                ? "border-red-200"
+                                                                                : "border-slate-200"
+                                                                        }
+                                                                        bg-white
+                                                                        text-slate-700
+                                                                        shadow-sm
+                                                                    `
+                                                            }
+                                                        `}
+                                                    >
+                                                        {isUser ? (
+                                                            <p className="whitespace-pre-wrap break-words">
+                                                                {
+                                                                    message.content
+                                                                }
+                                                            </p>
+                                                        ) : (
+                                                            <div
+                                                                className="
+                                                                    space-y-1
+                                                                    break-words
+                                                                "
+                                                            >
+                                                                {renderAssistantContent(
+                                                                    message.content,
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Assistant actions */}
+
+                                                    {!isUser && (
+                                                        <div
+                                                            className="
+                                                                mt-1
+                                                                flex
+                                                                items-center
+                                                                gap-0.5
+                                                                pl-1
+                                                                opacity-0
+                                                                transition
+                                                                group-hover:opacity-100
+                                                            "
+                                                        >
+                                                            <button
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    void copyMessage(
+                                                                        message,
+                                                                    )
+                                                                }
+                                                                className="
+                                                                    rounded-lg
+                                                                    p-1.5
+                                                                    text-slate-400
+                                                                    transition
+                                                                    hover:bg-white
+                                                                    hover:text-slate-600
+                                                                "
+                                                                aria-label="Copy answer"
+                                                                title="Copy answer"
+                                                            >
+                                                                {copiedId ===
+                                                                message.id ? (
+                                                                    <Check className="h-3.5 w-3.5 text-emerald-500" />
+                                                                ) : (
+                                                                    <Copy className="h-3.5 w-3.5" />
+                                                                )}
+                                                            </button>
+
+                                                            <button
+                                                                type="button"
+                                                                className="
+                                                                    rounded-lg
+                                                                    p-1.5
+                                                                    text-slate-400
+                                                                    transition
+                                                                    hover:bg-white
+                                                                    hover:text-slate-600
+                                                                "
+                                                                aria-label="Helpful"
+                                                                title="Helpful"
+                                                            >
+                                                                <ThumbsUp className="h-3.5 w-3.5" />
+                                                            </button>
+
+                                                            <button
+                                                                type="button"
+                                                                className="
+                                                                    rounded-lg
+                                                                    p-1.5
+                                                                    text-slate-400
+                                                                    transition
+                                                                    hover:bg-white
+                                                                    hover:text-slate-600
+                                                                "
+                                                                aria-label="Not helpful"
+                                                                title="Not helpful"
+                                                            >
+                                                                <ThumbsDown className="h-3.5 w-3.5" />
+                                                            </button>
+
+                                                            {message.error && (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={
+                                                                        retryLastMessage
+                                                                    }
+                                                                    className="
+                                                                        ml-1
+                                                                        rounded-lg
+                                                                        px-2
+                                                                        py-1
+                                                                        text-[10px]
+                                                                        font-semibold
+                                                                        text-sky-500
+                                                                        transition
+                                                                        hover:bg-white
+                                                                        hover:text-sky-600
+                                                                    "
+                                                                >
+                                                                    Retry
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </motion.div>
+                                        );
+                                    },
+                                )}
                             </AnimatePresence>
 
                             {/* Typing */}
@@ -933,6 +1467,9 @@ export default function PortfolioChatbot() {
                                                                     suggestion,
                                                                 )
                                                             }
+                                                            disabled={
+                                                                loading
+                                                            }
                                                             className="
                                                                 rounded-full
                                                                 border
@@ -948,6 +1485,8 @@ export default function PortfolioChatbot() {
                                                                 hover:border-sky-300
                                                                 hover:bg-sky-50
                                                                 hover:text-sky-600
+                                                                disabled:cursor-not-allowed
+                                                                disabled:opacity-50
                                                             "
                                                         >
                                                             {
@@ -967,7 +1506,9 @@ export default function PortfolioChatbot() {
                         ================================================== */}
 
                         <form
-                            onSubmit={handleSubmit}
+                            onSubmit={
+                                handleSubmit
+                            }
                             className="
                                 flex
                                 shrink-0
@@ -979,24 +1520,36 @@ export default function PortfolioChatbot() {
                             "
                         >
                             <div className="relative min-w-0 flex-1">
-                                <input
+                                <textarea
                                     ref={inputRef}
                                     value={input}
-                                    onChange={(event) =>
-                                        setInput(
-                                            event.target.value,
+                                    onChange={(
+                                        event,
+                                    ) =>
+                                        handleInputChange(
+                                            event
+                                                .target
+                                                .value,
                                         )
                                     }
                                     onKeyDown={
                                         handleKeyDown
                                     }
-                                    disabled={loading}
-                                    maxLength={1000}
+                                    disabled={
+                                        loading
+                                    }
+                                    maxLength={
+                                        MAX_MESSAGE_LENGTH
+                                    }
+                                    rows={1}
                                     autoComplete="off"
                                     placeholder="Ask about my skills..."
                                     className="
-                                        min-w-0
+                                        min-h-12
+                                        max-h-[120px]
                                         w-full
+                                        resize-none
+                                        overflow-y-auto
                                         rounded-2xl
                                         border
                                         border-slate-200
@@ -1018,7 +1571,8 @@ export default function PortfolioChatbot() {
                                     "
                                 />
 
-                                {input.length > 0 && (
+                                {input.length >
+                                    0 && (
                                     <span
                                         className="
                                             pointer-events-none
@@ -1029,7 +1583,13 @@ export default function PortfolioChatbot() {
                                             text-slate-300
                                         "
                                     >
-                                        {input.length}/1000
+                                        {
+                                            input.length
+                                        }
+                                        /
+                                        {
+                                            MAX_MESSAGE_LENGTH
+                                        }
                                     </span>
                                 )}
                             </div>
@@ -1063,7 +1623,7 @@ export default function PortfolioChatbot() {
                                     shrink-0
                                     items-center
                                     justify-center
-                                    self-center
+                                    self-end
                                     rounded-2xl
                                     bg-sky-500
                                     text-white
@@ -1084,7 +1644,8 @@ export default function PortfolioChatbot() {
                                         }}
                                         transition={{
                                             duration: 1,
-                                            repeat: Infinity,
+                                            repeat:
+                                                Infinity,
                                             ease: "linear",
                                         }}
                                     >
@@ -1097,7 +1658,7 @@ export default function PortfolioChatbot() {
                         </form>
 
                         {/* =================================================
-                            FOOTER STATUS
+                            FOOTER
                         ================================================== */}
 
                         <div

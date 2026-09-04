@@ -1,395 +1,881 @@
-'use server';
+"use server";
 
-import { revalidatePath } from 'next/cache';
-import { auth } from '@/auth';
-import { ensureDatabase, prisma } from '@/lib/db';
+import { revalidatePath } from "next/cache";
+import { Prisma } from "@prisma/client";
 
-const isoNow = () => new Date().toISOString();
+import { auth } from "@/auth";
+import { ensureDatabase, prisma } from "@/lib/db";
+
+/* ============================================================
+   TYPES
+============================================================ */
+
+export type ActionResult = {
+    success: boolean;
+    error?: string;
+};
+
+/* ============================================================
+   AUTHORIZATION
+============================================================ */
 
 async function requireAdmin() {
-  const session = await auth();
+    const session = await auth();
 
-  if (!session?.user) {
-    throw new Error('Unauthorized');
-  }
+    if (!session?.user) {
+        throw new Error("Unauthorized");
+    }
 
-  await ensureDatabase();
+    if (session.user.role !== "admin") {
+        throw new Error("Forbidden");
+    }
+
+    await ensureDatabase();
+
+    return session;
 }
 
-export async function createSkill(formData: FormData) {
-  await requireAdmin();
+/* ============================================================
+   HELPERS
+============================================================ */
 
-  const name = String(formData.get('name') ?? '').trim();
-  const category = String(formData.get('category') ?? '').trim();
-  const order = Number(formData.get('order') ?? '0');
-
-  if (!name || !category) {
-    return;
-  }
-
-  await prisma.skill.create({
-    data: {
-      name,
-      category,
-      order: Number.isFinite(order) ? order : 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-  });
-
-  revalidatePath('/admin');
-  revalidatePath('/');
+function text(
+    formData: FormData,
+    key: string,
+): string {
+    return String(formData.get(key) ?? "").trim();
 }
 
-export async function updateSkill(formData: FormData) {
-  await requireAdmin();
+function nullableText(
+    formData: FormData,
+    key: string,
+): string | null {
+    const value = text(formData, key);
 
-  const id = Number(formData.get('id'));
-  const name = String(formData.get('name') ?? '').trim();
-  const category = String(formData.get('category') ?? '').trim();
-  const order = Number(formData.get('order') ?? '0');
-
-  if (!id || !name || !category) {
-    return;
-  }
-
-  await prisma.skill.update({
-    where: { id },
-    data: {
-      name,
-      category,
-      order: Number.isFinite(order) ? order : 0,
-      updatedAt: new Date().toISOString(),
-    },
-  });
-
-  revalidatePath('/admin');
-  revalidatePath('/');
+    return value || null;
 }
 
-export async function deleteSkill(formData: FormData) {
-  await requireAdmin();
+function integer(
+    formData: FormData,
+    key: string,
+): number | null {
+    const value = Number(formData.get(key));
 
-  const id = Number(formData.get('id'));
+    if (!Number.isInteger(value) || value <= 0) {
+        return null;
+    }
 
-  if (!id) {
-    return;
-  }
-
-  await prisma.skill.delete({ where: { id } });
-
-  revalidatePath('/admin');
-  revalidatePath('/');
+    return value;
 }
 
-export async function createProject(formData: FormData) {
-  await requireAdmin();
+function orderValue(
+    formData: FormData,
+): number {
+    const value = Number(
+        formData.get("order") ?? 0,
+    );
 
-  const title = String(formData.get('title') ?? '').trim();
-  const slug = String(formData.get('slug') ?? '').trim();
-  const summary = String(formData.get('summary') ?? '').trim();
-  const description = String(formData.get('description') ?? '').trim();
-  const url = String(formData.get('url') ?? '').trim();
-  const githubUrl = String(formData.get('githubUrl') ?? '').trim();
-  const imageUrl = String(formData.get('imageUrl') ?? '').trim();
-  const tags = String(formData.get('tags') ?? '').trim();
-  const featured = formData.get('featured') === 'on';
-  const status = String(formData.get('status') ?? 'active').trim() || 'active';
+    if (!Number.isFinite(value)) {
+        return 0;
+    }
 
-  if (!title || !slug || !summary || !description) {
-    return;
-  }
-
-  await prisma.project.create({
-    data: {
-      title,
-      slug,
-      summary,
-      description,
-      url: url || null,
-      githubUrl: githubUrl || null,
-      imageUrl: imageUrl || null,
-      tags,
-      featured,
-      status,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-  });
-
-  revalidatePath('/admin');
-  revalidatePath('/');
+    return Math.trunc(value);
 }
 
-export async function updateProject(formData: FormData) {
-  await requireAdmin();
+function checked(
+    formData: FormData,
+    key: string,
+): boolean {
+    const value = formData.get(key);
 
-  const id = Number(formData.get('id'));
-  const title = String(formData.get('title') ?? '').trim();
-  const slug = String(formData.get('slug') ?? '').trim();
-  const summary = String(formData.get('summary') ?? '').trim();
-  const description = String(formData.get('description') ?? '').trim();
-  const url = String(formData.get('url') ?? '').trim();
-  const githubUrl = String(formData.get('githubUrl') ?? '').trim();
-  const imageUrl = String(formData.get('imageUrl') ?? '').trim();
-  const tags = String(formData.get('tags') ?? '').trim();
-  const featured = formData.get('featured') === 'on';
-  const status = String(formData.get('status') ?? 'active').trim() || 'active';
-
-  if (!id || !title || !slug || !summary || !description) {
-    return;
-  }
-
-  await prisma.project.update({
-    where: { id },
-    data: {
-      title,
-      slug,
-      summary,
-      description,
-      url: url || null,
-      githubUrl: githubUrl || null,
-      imageUrl: imageUrl || null,
-      tags,
-      featured,
-      status,
-      updatedAt: new Date().toISOString(),
-    },
-  });
-
-  revalidatePath('/admin');
-  revalidatePath('/');
+    return (
+        value === "on" ||
+        value === "true" ||
+        value === "1"
+    );
 }
 
-export async function deleteProject(formData: FormData) {
-  await requireAdmin();
-
-  const id = Number(formData.get('id'));
-
-  if (!id) {
-    return;
-  }
-
-  await prisma.project.delete({ where: { id } });
-
-  revalidatePath('/admin');
-  revalidatePath('/');
+function revalidatePortfolio(): void {
+    revalidatePath("/admin");
+    revalidatePath("/");
 }
+
+function errorMessage(error: unknown): string {
+    if (
+        error instanceof
+        Prisma.PrismaClientKnownRequestError
+    ) {
+        switch (error.code) {
+            case "P2002":
+                return "A record with that unique value already exists.";
+
+            case "P2025":
+                return "The requested record was not found.";
+
+            case "P2003":
+                return "This record cannot be changed because another record depends on it.";
+
+            default:
+                return "The database operation failed.";
+        }
+    }
+
+    if (error instanceof Error) {
+        return error.message;
+    }
+
+    return "Something went wrong.";
+}
+
+/* ============================================================
+   SKILLS
+============================================================ */
+
+export async function createSkill(
+    formData: FormData,
+): Promise<ActionResult> {
+    await requireAdmin();
+
+    const name = text(formData, "name");
+    const category = text(formData, "category");
+    const order = orderValue(formData);
+
+    if (!name) {
+        return {
+            success: false,
+            error: "Skill name is required.",
+        };
+    }
+
+    if (!category) {
+        return {
+            success: false,
+            error: "Skill category is required.",
+        };
+    }
+
+    try {
+        await prisma.skill.create({
+            data: {
+                name,
+                category,
+                order,
+            },
+        });
+
+        revalidatePortfolio();
+
+        return {
+            success: true,
+        };
+    } catch (error) {
+        console.error("createSkill:", error);
+
+        return {
+            success: false,
+            error: errorMessage(error),
+        };
+    }
+}
+
+export async function updateSkill(
+    formData: FormData,
+): Promise<ActionResult> {
+    await requireAdmin();
+
+    const id = integer(formData, "id");
+    const name = text(formData, "name");
+    const category = text(formData, "category");
+    const order = orderValue(formData);
+
+    if (!id) {
+        return {
+            success: false,
+            error: "Invalid skill ID.",
+        };
+    }
+
+    if (!name) {
+        return {
+            success: false,
+            error: "Skill name is required.",
+        };
+    }
+
+    if (!category) {
+        return {
+            success: false,
+            error: "Skill category is required.",
+        };
+    }
+
+    try {
+        await prisma.skill.update({
+            where: {
+                id,
+            },
+            data: {
+                name,
+                category,
+                order,
+            },
+        });
+
+        revalidatePortfolio();
+
+        return {
+            success: true,
+        };
+    } catch (error) {
+        console.error("updateSkill:", error);
+
+        return {
+            success: false,
+            error: errorMessage(error),
+        };
+    }
+}
+
+export async function deleteSkill(
+    formData: FormData,
+): Promise<ActionResult> {
+    await requireAdmin();
+
+    const id = integer(formData, "id");
+
+    if (!id) {
+        return {
+            success: false,
+            error: "Invalid skill ID.",
+        };
+    }
+
+    try {
+        await prisma.skill.delete({
+            where: {
+                id,
+            },
+        });
+
+        revalidatePortfolio();
+
+        return {
+            success: true,
+        };
+    } catch (error) {
+        console.error("deleteSkill:", error);
+
+        return {
+            success: false,
+            error: errorMessage(error),
+        };
+    }
+}
+
+/* ============================================================
+   PROJECTS
+============================================================ */
+
+export async function createProject(
+    formData: FormData,
+): Promise<ActionResult> {
+    await requireAdmin();
+
+    const title = text(formData, "title");
+    const slug = text(formData, "slug");
+    const summary = text(formData, "summary");
+    const description = text(
+        formData,
+        "description",
+    );
+
+    const url = nullableText(formData, "url");
+    const githubUrl = nullableText(
+        formData,
+        "githubUrl",
+    );
+    const imageUrl = nullableText(
+        formData,
+        "imageUrl",
+    );
+
+    const tags = text(formData, "tags");
+
+    const featured = checked(
+        formData,
+        "featured",
+    );
+
+    const status =
+        text(formData, "status") || "active";
+
+    if (!title) {
+        return {
+            success: false,
+            error: "Project title is required.",
+        };
+    }
+
+    if (!slug) {
+        return {
+            success: false,
+            error: "Project slug is required.",
+        };
+    }
+
+    if (!summary) {
+        return {
+            success: false,
+            error: "Project summary is required.",
+        };
+    }
+
+    if (!description) {
+        return {
+            success: false,
+            error:
+                "Project description is required.",
+        };
+    }
+
+    try {
+        await prisma.project.create({
+            data: {
+                title,
+                slug,
+                summary,
+                description,
+                url,
+                githubUrl,
+                imageUrl,
+                tags,
+                featured,
+                status,
+            },
+        });
+
+        revalidatePortfolio();
+
+        return {
+            success: true,
+        };
+    } catch (error) {
+        console.error("createProject:", error);
+
+        return {
+            success: false,
+            error: errorMessage(error),
+        };
+    }
+}
+
+export async function updateProject(
+    formData: FormData,
+): Promise<ActionResult> {
+    await requireAdmin();
+
+    const id = integer(formData, "id");
+
+    const title = text(formData, "title");
+    const slug = text(formData, "slug");
+    const summary = text(formData, "summary");
+    const description = text(
+        formData,
+        "description",
+    );
+
+    const url = nullableText(formData, "url");
+    const githubUrl = nullableText(
+        formData,
+        "githubUrl",
+    );
+    const imageUrl = nullableText(
+        formData,
+        "imageUrl",
+    );
+
+    const tags = text(formData, "tags");
+
+    const featured = checked(
+        formData,
+        "featured",
+    );
+
+    const status =
+        text(formData, "status") || "active";
+
+    if (!id) {
+        return {
+            success: false,
+            error: "Invalid project ID.",
+        };
+    }
+
+    if (!title) {
+        return {
+            success: false,
+            error: "Project title is required.",
+        };
+    }
+
+    if (!slug) {
+        return {
+            success: false,
+            error: "Project slug is required.",
+        };
+    }
+
+    if (!summary) {
+        return {
+            success: false,
+            error: "Project summary is required.",
+        };
+    }
+
+    if (!description) {
+        return {
+            success: false,
+            error:
+                "Project description is required.",
+        };
+    }
+
+    try {
+        await prisma.project.update({
+            where: {
+                id,
+            },
+            data: {
+                title,
+                slug,
+                summary,
+                description,
+                url,
+                githubUrl,
+                imageUrl,
+                tags,
+                featured,
+                status,
+            },
+        });
+
+        revalidatePortfolio();
+
+        return {
+            success: true,
+        };
+    } catch (error) {
+        console.error("updateProject:", error);
+
+        return {
+            success: false,
+            error: errorMessage(error),
+        };
+    }
+}
+
+export async function deleteProject(
+    formData: FormData,
+): Promise<ActionResult> {
+    await requireAdmin();
+
+    const id = integer(formData, "id");
+
+    if (!id) {
+        return {
+            success: false,
+            error: "Invalid project ID.",
+        };
+    }
+
+    try {
+        await prisma.project.delete({
+            where: {
+                id,
+            },
+        });
+
+        revalidatePortfolio();
+
+        return {
+            success: true,
+        };
+    } catch (error) {
+        console.error("deleteProject:", error);
+
+        return {
+            success: false,
+            error: errorMessage(error),
+        };
+    }
+}
+
+/* ============================================================
+   PROFILE
+============================================================ */
 
 export async function updateProfile(
-  formData: FormData,
-) {
-  await requireAdmin();
+    formData: FormData,
+): Promise<ActionResult> {
+    await requireAdmin();
 
-  const id = Number(
-    formData.get('id') ?? '0',
-  );
+    const id = integer(formData, "id");
 
-  const name = String(
-    formData.get('name') ?? '',
-  ).trim();
-
-  const title = String(
-    formData.get('title') ?? '',
-  ).trim();
-
-  const email = String(
-    formData.get('email') ?? '',
-  ).trim();
-
-  const location = String(
-    formData.get('location') ?? '',
-  ).trim();
-
-  const summary = String(
-    formData.get('summary') ?? '',
-  ).trim();
-
-  const availability = String(
-    formData.get('availability') ?? '',
-  ).trim();
-
-  if (!name || !title || !summary) {
-    throw new Error(
-      'Name, title and summary are required.',
+    const name = text(formData, "name");
+    const headline = text(
+        formData,
+        "headline",
     );
-  }
+    const bio = text(formData, "bio");
 
-  const data = {
-    name,
-    title,
-    email: email || null,
-    location: location || null,
-    summary,
-    availability: availability || null,
-    updatedAt: new Date().toISOString(),
-  };
+    const location = nullableText(
+        formData,
+        "location",
+    );
 
-  if (id) {
-    await prisma.profile.update({
-      where: { id },
-      data,
-    });
-  } else {
-    await prisma.profile.create({
-      data: {
-        ...data,
-        createdAt: new Date().toISOString(),
-      },
-    });
-  }
+    const email = nullableText(
+        formData,
+        "email",
+    );
 
-  revalidatePath('/admin');
-  revalidatePath('/');
+    const website = nullableText(
+        formData,
+        "website",
+    );
+
+    const github = nullableText(
+        formData,
+        "github",
+    );
+
+    const linkedin = nullableText(
+        formData,
+        "linkedin",
+    );
+
+    const avatarUrl = nullableText(
+        formData,
+        "avatarUrl",
+    );
+
+    if (!name) {
+        return {
+            success: false,
+            error: "Name is required.",
+        };
+    }
+
+    if (!headline) {
+        return {
+            success: false,
+            error: "Headline is required.",
+        };
+    }
+
+    if (!bio) {
+        return {
+            success: false,
+            error: "Bio is required.",
+        };
+    }
+
+    try {
+        const data = {
+            name,
+            headline,
+            bio,
+            location,
+            email,
+            website,
+            github,
+            linkedin,
+            avatarUrl,
+        };
+
+        if (id) {
+            await prisma.profile.update({
+                where: {
+                    id,
+                },
+                data,
+            });
+        } else {
+            await prisma.profile.create({
+                data,
+            });
+        }
+
+        revalidatePortfolio();
+
+        return {
+            success: true,
+        };
+    } catch (error) {
+        console.error("updateProfile:", error);
+
+        return {
+            success: false,
+            error: errorMessage(error),
+        };
+    }
 }
 
+/* ============================================================
+   EXPERIENCE
+============================================================ */
+
+/**
+ * IMPORTANT:
+ *
+ * Experience uses:
+ *
+ * company
+ * position
+ * location
+ * startDate
+ * endDate
+ * description
+ *
+ * startDate/endDate are strings.
+ *
+ * There is NO technologies field.
+ * There is NO current field.
+ */
 export async function createExperience(
-  formData: FormData,
-) {
-  await requireAdmin();
+    formData: FormData,
+): Promise<ActionResult> {
+    await requireAdmin();
 
-  const company = String(
-    formData.get('company') ?? '',
-  ).trim();
-
-  const position = String(
-    formData.get('position') ?? '',
-  ).trim();
-
-  const startDate = String(
-    formData.get('startDate') ?? '',
-  ).trim();
-
-  const endDate = String(
-    formData.get('endDate') ?? '',
-  ).trim();
-
-  const description = String(
-    formData.get('description') ?? '',
-  ).trim();
-
-  const technologies = String(
-    formData.get('technologies') ?? '',
-  ).trim();
-
-  const current =
-    formData.get('current') === 'on';
-
-  if (
-    !company ||
-    !position ||
-    !startDate ||
-    !description
-  ) {
-    throw new Error(
-      'Company, position, start date and description are required.',
+    const company = text(
+        formData,
+        "company",
     );
-  }
 
-  await prisma.experience.create({
-    data: {
-      company,
-      position,
-      startDate,
-      endDate: endDate || null,
-      description,
-      technologies,
-      current,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-  });
+    const position = text(
+        formData,
+        "position",
+    );
 
-  revalidatePath('/admin');
-  revalidatePath('/');
+    const location = nullableText(
+        formData,
+        "location",
+    );
+
+    const startDate = text(
+        formData,
+        "startDate",
+    );
+
+    const endDate = nullableText(
+        formData,
+        "endDate",
+    );
+
+    const description = text(
+        formData,
+        "description",
+    );
+
+    if (!company) {
+        return {
+            success: false,
+            error: "Company is required.",
+        };
+    }
+
+    if (!position) {
+        return {
+            success: false,
+            error: "Position is required.",
+        };
+    }
+
+    if (!startDate) {
+        return {
+            success: false,
+            error: "Start date is required.",
+        };
+    }
+
+    if (!description) {
+        return {
+            success: false,
+            error:
+                "Experience description is required.",
+        };
+    }
+
+    try {
+        await prisma.experience.create({
+            data: {
+                company,
+                position,
+                location,
+                startDate,
+                endDate,
+                description,
+            },
+        });
+
+        revalidatePortfolio();
+
+        return {
+            success: true,
+        };
+    } catch (error) {
+        console.error(
+            "createExperience:",
+            error,
+        );
+
+        return {
+            success: false,
+            error: errorMessage(error),
+        };
+    }
 }
 
 export async function updateExperience(
-  formData: FormData,
-) {
-  await requireAdmin();
+    formData: FormData,
+): Promise<ActionResult> {
+    await requireAdmin();
 
-  const id = Number(
-    formData.get('id') ?? '0',
-  );
+    const id = integer(formData, "id");
 
-  const company = String(
-    formData.get('company') ?? '',
-  ).trim();
-
-  const position = String(
-    formData.get('position') ?? '',
-  ).trim();
-
-  const startDate = String(
-    formData.get('startDate') ?? '',
-  ).trim();
-
-  const endDate = String(
-    formData.get('endDate') ?? '',
-  ).trim();
-
-  const description = String(
-    formData.get('description') ?? '',
-  ).trim();
-
-  const technologies = String(
-    formData.get('technologies') ?? '',
-  ).trim();
-
-  const current =
-    formData.get('current') === 'on';
-
-  if (
-    !id ||
-    !company ||
-    !position ||
-    !startDate ||
-    !description
-  ) {
-    throw new Error(
-      'Invalid experience data.',
+    const company = text(
+        formData,
+        "company",
     );
-  }
 
-  await prisma.experience.update({
-    where: { id },
+    const position = text(
+        formData,
+        "position",
+    );
 
-    data: {
-      company,
-      position,
-      startDate,
-      endDate: endDate || null,
-      description,
-      technologies,
-      current,
-      updatedAt: new Date().toISOString(),
-    },
-  });
+    const location = nullableText(
+        formData,
+        "location",
+    );
 
-  revalidatePath('/admin');
-  revalidatePath('/');
+    const startDate = text(
+        formData,
+        "startDate",
+    );
+
+    const endDate = nullableText(
+        formData,
+        "endDate",
+    );
+
+    const description = text(
+        formData,
+        "description",
+    );
+
+    if (!id) {
+        return {
+            success: false,
+            error: "Invalid experience ID.",
+        };
+    }
+
+    if (!company) {
+        return {
+            success: false,
+            error: "Company is required.",
+        };
+    }
+
+    if (!position) {
+        return {
+            success: false,
+            error: "Position is required.",
+        };
+    }
+
+    if (!startDate) {
+        return {
+            success: false,
+            error: "Start date is required.",
+        };
+    }
+
+    if (!description) {
+        return {
+            success: false,
+            error:
+                "Experience description is required.",
+        };
+    }
+
+    try {
+        await prisma.experience.update({
+            where: {
+                id,
+            },
+            data: {
+                company,
+                position,
+                location,
+                startDate,
+                endDate,
+                description,
+            },
+        });
+
+        revalidatePortfolio();
+
+        return {
+            success: true,
+        };
+    } catch (error) {
+        console.error(
+            "updateExperience:",
+            error,
+        );
+
+        return {
+            success: false,
+            error: errorMessage(error),
+        };
+    }
 }
 
 export async function deleteExperience(
-  formData: FormData,
-) {
-  await requireAdmin();
+    formData: FormData,
+): Promise<ActionResult> {
+    await requireAdmin();
 
-  const id = Number(
-    formData.get('id') ?? '0',
-  );
+    const id = integer(formData, "id");
 
-  if (!id) {
-    throw new Error(
-      'Invalid experience ID.',
-    );
-  }
+    if (!id) {
+        return {
+            success: false,
+            error: "Invalid experience ID.",
+        };
+    }
 
-  await prisma.experience.delete({
-    where: { id },
-  });
+    try {
+        await prisma.experience.delete({
+            where: {
+                id,
+            },
+        });
 
-  revalidatePath('/admin');
-  revalidatePath('/');
+        revalidatePortfolio();
+
+        return {
+            success: true,
+        };
+    } catch (error) {
+        console.error(
+            "deleteExperience:",
+            error,
+        );
+
+        return {
+            success: false,
+            error: errorMessage(error),
+        };
+    }
 }
