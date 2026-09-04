@@ -111,3 +111,54 @@ export async function POST(
         );
     }
 }
+
+export async function PATCH(request: Request) {
+    try {
+        const authResult = await requireAdmin();
+
+        if (!authResult.authorized) {
+            return apiError(authResult.error, authResult.status);
+        }
+
+        const body = await request.json();
+        const id = Number(body.id);
+
+        if (!Number.isInteger(id) || id <= 0) {
+            return apiError("Invalid project ID.", 400);
+        }
+
+        const parsed = projectUpdateSchema.safeParse(body);
+
+        if (!parsed.success) {
+            return apiError("Invalid project data.", 400, parsed.error.flatten());
+        }
+
+        const data = {
+            ...parsed.data,
+            status: parsed.data.featured
+                ? "active"
+                : parsed.data.status?.toLowerCase() === "featured"
+                    ? "active"
+                    : parsed.data.status,
+        };
+
+        const project = await prisma.$transaction(async (tx) => {
+            if (data.featured === true) {
+                await tx.project.updateMany({
+                    where: { id: { not: id }, featured: true },
+                    data: { featured: false },
+                });
+            }
+
+            return tx.project.update({
+                where: { id },
+                data,
+            });
+        });
+
+        return apiSuccess(project);
+    } catch (error) {
+        console.error("PATCH /api/admin/projects:", error);
+        return apiError("Failed to update project.");
+    }
+}

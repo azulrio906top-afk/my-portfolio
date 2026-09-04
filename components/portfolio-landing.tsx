@@ -455,27 +455,25 @@ export function PortfolioLanding({
 
     const projects = useMemo(() => {
         return [...projectList].sort((a, b) => {
-            const aFeatured =
-                a.status?.toLowerCase() ===
-                "featured"
-                    ? 1
-                    : 0;
+            // `featured` is the source of truth for the public featured build.
+            // Do not derive featured state from the lifecycle `status` field.
+            const aFeatured = a.featured ? 1 : 0;
+            const bFeatured = b.featured ? 1 : 0;
 
-            const bFeatured =
-                b.status?.toLowerCase() ===
-                "featured"
-                    ? 1
-                    : 0;
+            if (aFeatured !== bFeatured) {
+                return bFeatured - aFeatured;
+            }
 
-            return bFeatured - aFeatured;
+            return 0;
         });
     }, [projectList]);
+
+    const featuredProject = projects.find((project) => project.featured) ?? null;
 
     const visibleProjects = showAllProjects
         ? projects
         : projects.slice(0, 4);
 
-    const featuredProject = projects[0];
     const featuredCount = projects.filter((project) => project.featured).length;
 
     const remainingProjects =
@@ -1699,7 +1697,7 @@ export function PortfolioLanding({
                         <div className="space-y-7">
                             {visibleProjects.map((project, index) => {
                                 const tags = parseTags(project.tags);
-                                const isFeatured = index === 0;
+                                const isFeatured = project.featured === true;
                                 const hasLiveUrl = Boolean(project.url);
                                 const hasGithub = Boolean(project.githubUrl);
 

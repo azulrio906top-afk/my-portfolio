@@ -457,22 +457,43 @@ export async function updateProject(
     }
 
     try {
-        await prisma.project.update({
-            where: {
-                id,
-            },
-            data: {
-                title,
-                slug,
-                summary,
-                description,
-                url,
-                githubUrl,
-                imageUrl,
-                tags,
-                featured,
-                status,
-            },
+        // There should be exactly one featured build on the public portfolio.
+        // Clear the previous featured flag first, then save the selected project.
+        // This keeps the admin toggle and public featured card in sync.
+        await prisma.$transaction(async (tx) => {
+            if (featured) {
+                await tx.project.updateMany({
+                    where: {
+                        id: {
+                            not: id,
+                        },
+                        featured: true,
+                    },
+                    data: {
+                        featured: false,
+                    },
+                });
+            }
+
+            await tx.project.update({
+                where: {
+                    id,
+                },
+                data: {
+                    title,
+                    slug,
+                    summary,
+                    description,
+                    url,
+                    githubUrl,
+                    imageUrl,
+                    tags,
+                    featured,
+                    // Featured is a presentation flag; the lifecycle status
+                    // remains `active` when a project is featured.
+                    status: featured ? "active" : status,
+                },
+            });
         });
 
         revalidatePortfolio();
