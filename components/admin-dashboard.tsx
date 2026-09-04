@@ -983,7 +983,7 @@ export function AdminDashboard({
                             `}
                         >
                             <span>
-                                © 2026 Flunco Ruiz.
+                                © 2026 Frunco Ruiz.
                                 All rights reserved.
                             </span>
 

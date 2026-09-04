@@ -70,7 +70,7 @@ async function main() {
         },
 
         update: {
-            name: "Flunco Ruiz",
+            name: "Frunco Ruiz",
 
             title:
                 "Full-Stack Developer & Product Designer",
@@ -97,7 +97,7 @@ async function main() {
         create: {
             id: 1,
 
-            name: "Flunco Ruiz",
+            name: "Frunco Ruiz",
 
             title:
                 "Full-Stack Developer & Product Designer",
@@ -330,10 +330,10 @@ async function main() {
                 "ai-portfolio-assistant",
 
             summary:
-                "An AI-powered assistant that helps visitors discover skills, projects and services through natural conversation.",
+                "A conversational AI assistant that helps visitors explore my skills, projects, experience and services in a natural way.",
 
             description:
-                "A production-style portfolio assistant built with Next.js, TypeScript and an API-driven AI conversation layer. The experience combines contextual responses, conversation history, suggested questions and a polished floating chatbot interface.",
+                "An AI assistant built into the portfolio to make the site easier to explore. It combines a polished floating chat interface with contextual portfolio knowledge, conversation history, suggested questions and an API-driven AI conversation layer, allowing visitors to learn about my work without searching through multiple pages.",
 
             url: null,
 
@@ -511,6 +511,78 @@ async function main() {
     console.log(
         `✓ Projects: ${projects.length}`,
     );
+
+    /*
+     * =========================================================
+     * PROJECT SKILLS
+     * =========================================================
+     */
+
+    const projectSkillMap: Record<string, string[]> = {
+        "ai-portfolio-assistant": [
+            "Next.js",
+            "React",
+            "TypeScript",
+            "AI Assistants",
+            "OpenAI",
+            "LLM Integration",
+            "Tailwind CSS",
+        ],
+        "saas-analytics-dashboard": [
+            "React",
+            "Next.js",
+            "TypeScript",
+            "Tailwind CSS",
+        ],
+        "business-management-platform": [
+            "Next.js",
+            "Node.js",
+            "Prisma",
+            "REST APIs",
+        ],
+        "ai-workflow-automation": [
+            "AI Integration",
+            "AI Automation",
+            "Node.js",
+            "REST APIs",
+            "TypeScript",
+        ],
+        "developer-portfolio-platform": [
+            "Next.js",
+            "TypeScript",
+            "Prisma",
+            "NextAuth",
+        ],
+    };
+
+    for (const [slug, skillNames] of Object.entries(projectSkillMap)) {
+        const project = await prisma.project.findUnique({
+            where: { slug },
+        });
+
+        if (!project) continue;
+
+        await prisma.projectSkill.deleteMany({
+            where: { projectId: project.id },
+        });
+
+        for (const skillName of skillNames) {
+            const skill = await prisma.skill.findUnique({
+                where: { name: skillName },
+            });
+
+            if (!skill) continue;
+
+            await prisma.projectSkill.create({
+                data: {
+                    projectId: project.id,
+                    skillId: skill.id,
+                },
+            });
+        }
+    }
+
+    console.log("✓ Project skills linked");
 
     /*
      * =========================================================

@@ -19,9 +19,11 @@ import {
     ChevronRight,
     Code2,
     Database,
+    Download,
     ExternalLink,
     // Github,
     Eye,
+    FileText,
     ArrowUpRight,
     Bot,
     Layers3,
@@ -1333,6 +1335,57 @@ export function PortfolioLanding({
 
                             <motion.div
                                 variants={{
+                                    hidden: { opacity: 0, y: 12 },
+                                    visible: {
+                                        opacity: 1,
+                                        y: 0,
+                                        transition: { duration: 0.45 },
+                                    },
+                                }}
+                                className="mt-4 flex flex-wrap gap-2.5"
+                            >
+                                <a
+                                    href="/documents/Frunco_Ruiz_CV.pdf"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className={`group inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-xs font-bold transition hover:-translate-y-0.5 ${secondaryButton}`}
+                                    aria-label="Read Frunco Ruiz CV"
+                                >
+                                    <FileText className="h-3.5 w-3.5" />
+                                    Read CV
+                                </a>
+                                <a
+                                    href="/documents/Frunco_Ruiz_CV.pdf"
+                                    download="Frunco_Ruiz_CV.pdf"
+                                    className={`group inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-xs font-bold transition hover:-translate-y-0.5 ${secondaryButton}`}
+                                    aria-label="Download Frunco Ruiz CV"
+                                >
+                                    <Download className="h-3.5 w-3.5" />
+                                    Download CV
+                                </a>
+                                <a
+                                    href="/documents/Frunco_Ruiz_Resume.pdf"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className={`group inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-xs font-bold transition hover:-translate-y-0.5 ${secondaryButton}`}
+                                    aria-label="Read Frunco Ruiz resume"
+                                >
+                                    <FileText className="h-3.5 w-3.5" />
+                                    Read Resume
+                                </a>
+                                <a
+                                    href="/documents/Frunco_Ruiz_Resume.pdf"
+                                    download="Frunco_Ruiz_Resume.pdf"
+                                    className={`group inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-xs font-bold transition hover:-translate-y-0.5 ${secondaryButton}`}
+                                    aria-label="Download Frunco Ruiz resume"
+                                >
+                                    <Download className="h-3.5 w-3.5" />
+                                    Download Resume
+                                </a>
+                            </motion.div>
+
+                            <motion.div
+                                variants={{
                                     hidden: {
                                         opacity: 0,
                                     },
@@ -1445,7 +1498,7 @@ export function PortfolioLanding({
                                                     </p>
 
                                                     <h2 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">
-                                                        Flunco
+                                                        Frunco
                                                         <span className="text-sky-400">
                                                             .
                                                         </span>

@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Flunco Ruiz — Full-Stack Developer & Product Designer",
+  title: "Frunco Ruiz — Full-Stack Developer & Product Designer",
   description: "A full-stack developer and product designer building modern, production-ready digital products, dashboards, APIs, and AI-powered experiences.",
 };
 

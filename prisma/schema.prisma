@@ -96,8 +96,6 @@ model ChatFeedback {
   @@index([value])
   @@index([createdAt])
 }
-
-
 model ProjectSkill {
   projectId Int
   skillId   Int

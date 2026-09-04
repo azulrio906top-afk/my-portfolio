@@ -22,7 +22,7 @@ type ProfileData = {
 };
 
 const fallbackProfile: ProfileData = {
-  name: "Flunco Ruiz",
+  name: "Frunco Ruiz",
   title: "Full-Stack Developer & Product Designer",
   headline: "I build digital products that move businesses forward.",
   bio: "Full-stack developer and product designer helping startups and growing businesses turn ideas into fast, elegant and production-ready software.",
