@@ -683,6 +683,7 @@ export async function updateProfile(
  *
  * Experience uses:
  *
+ * name
  * company
  * position
  * location
@@ -699,6 +700,11 @@ export async function createExperience(
     formData: FormData,
 ): Promise<ActionResult> {
     await requireAdmin();
+
+    const name = text(
+        formData,
+        "name",
+    );
 
     const company = text(
         formData,
@@ -729,6 +735,13 @@ export async function createExperience(
         formData,
         "description",
     );
+
+    if (!name) {
+        return {
+            success: false,
+            error: "Experience name is required.",
+        };
+    }
 
     if (!company) {
         return {
@@ -762,6 +775,7 @@ export async function createExperience(
     try {
         await prisma.experience.create({
             data: {
+                name,
                 company,
                 position,
                 location,
@@ -795,6 +809,11 @@ export async function updateExperience(
     await requireAdmin();
 
     const id = integer(formData, "id");
+
+    const name = text(
+        formData,
+        "name",
+    );
 
     const company = text(
         formData,
@@ -833,6 +852,13 @@ export async function updateExperience(
         };
     }
 
+    if (!name) {
+        return {
+            success: false,
+            error: "Experience name is required.",
+        };
+    }
+
     if (!company) {
         return {
             success: false,
@@ -868,6 +894,7 @@ export async function updateExperience(
                 id,
             },
             data: {
+                name,
                 company,
                 position,
                 location,

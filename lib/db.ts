@@ -90,8 +90,10 @@ const createStatements = [
 
   `CREATE TABLE IF NOT EXISTS "Experience" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "name" TEXT NOT NULL DEFAULT '',
     "company" TEXT NOT NULL,
     "position" TEXT NOT NULL,
+    "location" TEXT,
     "startDate" TEXT NOT NULL,
     "endDate" TEXT,
     "description" TEXT NOT NULL,
@@ -177,6 +179,25 @@ export async function ensureDatabase() {
       if (!profileColumnSet.has('bio')) {
         await prisma.$executeRawUnsafe(
           `ALTER TABLE "Profile" ADD COLUMN "bio" TEXT NOT NULL DEFAULT ''`,
+        );
+      }
+
+      const experienceColumns = await prisma.$queryRawUnsafe<Array<{ name: string }>>(
+        `PRAGMA table_info("Experience")`,
+      );
+      const experienceColumnSet = new Set(
+        experienceColumns.map((column) => column.name),
+      );
+
+      if (!experienceColumnSet.has('name')) {
+        await prisma.$executeRawUnsafe(
+          `ALTER TABLE "Experience" ADD COLUMN "name" TEXT NOT NULL DEFAULT ''`,
+        );
+      }
+
+      if (!experienceColumnSet.has('location')) {
+        await prisma.$executeRawUnsafe(
+          `ALTER TABLE "Experience" ADD COLUMN "location" TEXT`,
         );
       }
     } catch {
