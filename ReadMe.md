@@ -104,3 +104,9 @@ npm run db:seed
 npm run db:setup
 npm run db:studio
 ```
+
+## Production Docker
+
+The repository includes `Dockerfile`, `docker-compose.yml`, and `DEPLOYMENT.md` for a persistent SQLite deployment. The container stores the production database under `/app/data` and exposes `/api/health` for health checks.
+
+Because SQLite requires persistent storage, do not deploy this version to a serverless filesystem without first migrating Prisma to PostgreSQL.

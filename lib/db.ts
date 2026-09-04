@@ -6,6 +6,7 @@ type PrismaClientLike = {
   adminUser: any;
   profile: any;
   experience: any;
+  chatFeedback: any;
   $disconnect: () => Promise<void>;
   $on: (...args: any[]) => void;
   $queryRawUnsafe: <T = unknown>(query: string, ...values: any[]) => Promise<T>;
@@ -97,6 +98,18 @@ const createStatements = [
     "createdAt" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   )`,
+
+  `CREATE TABLE IF NOT EXISTS "ChatFeedback" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "messageId" TEXT NOT NULL UNIQUE,
+    "value" TEXT NOT NULL,
+    "reason" TEXT,
+    "comment" TEXT,
+    "question" TEXT,
+    "answer" TEXT NOT NULL,
+    "createdAt" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
 ];
 
 const indexStatements = [
@@ -106,6 +119,8 @@ const indexStatements = [
   `CREATE INDEX IF NOT EXISTS "Project_status_idx" ON "Project"("status")`,
   `CREATE INDEX IF NOT EXISTS "AdminUser_role_idx" ON "AdminUser"("role")`,
   `CREATE INDEX IF NOT EXISTS "Experience_current_idx" ON "Experience"("current")`,
+  `CREATE INDEX IF NOT EXISTS "ChatFeedback_value_idx" ON "ChatFeedback"("value")`,
+  `CREATE INDEX IF NOT EXISTS "ChatFeedback_createdAt_idx" ON "ChatFeedback"("createdAt")`,
 ];
 
 async function rebuildDatabase() {
@@ -127,11 +142,11 @@ export async function ensureDatabase() {
   globalForPrisma.databaseInitPromise = (async () => {
     try {
       const existingTables = await prisma.$queryRawUnsafe<Array<{ name: string }>>(
-        `SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('Skill', 'Project', 'AdminUser', 'Profile', 'Experience');`,
+        `SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('Skill', 'Project', 'AdminUser', 'Profile', 'Experience', 'ChatFeedback');`,
       );
 
       const tableSet = new Set(existingTables.map((row) => row.name));
-      const missing = ['Skill', 'Project', 'AdminUser', 'Profile', 'Experience'].filter((table) => !tableSet.has(table));
+      const missing = ['Skill', 'Project', 'AdminUser', 'Profile', 'Experience', 'ChatFeedback'].filter((table) => !tableSet.has(table));
 
       if (missing.length > 0) {
         await rebuildDatabase();

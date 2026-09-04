@@ -86,9 +86,17 @@ export async function POST(
             );
         }
 
+        const data = {
+            ...parsed.data,
+            status:
+                parsed.data.status?.toLowerCase() === "featured"
+                    ? "active"
+                    : parsed.data.status ?? "active",
+        };
+
         const project =
             await prisma.project.create({
-                data: parsed.data,
+                data,
             });
 
         return apiSuccess(project, 201);

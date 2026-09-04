@@ -306,8 +306,16 @@ export async function createProject(
         "featured",
     );
 
-    const status =
+    const requestedStatus =
         text(formData, "status") || "active";
+
+    // `featured` is a presentation flag, not a project lifecycle status.
+    // Older records may contain `status: "featured"`; normalize those
+    // records so toggling Featured never leaves an invalid/stale status.
+    const status =
+        requestedStatus.toLowerCase() === "featured"
+            ? "active"
+            : requestedStatus;
 
     if (!title) {
         return {
@@ -401,8 +409,16 @@ export async function updateProject(
         "featured",
     );
 
-    const status =
+    const requestedStatus =
         text(formData, "status") || "active";
+
+    // `featured` is a presentation flag, not a project lifecycle status.
+    // Older records may contain `status: "featured"`; normalize those
+    // records so toggling Featured never leaves an invalid/stale status.
+    const status =
+        requestedStatus.toLowerCase() === "featured"
+            ? "active"
+            : requestedStatus;
 
     if (!id) {
         return {

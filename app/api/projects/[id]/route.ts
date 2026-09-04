@@ -144,10 +144,20 @@ export async function PATCH(
             }
         }
 
+        const data = {
+            ...parsed.data,
+            // Featured is independent from lifecycle status. Normalize the
+            // legacy `featured` status to `active` whenever a project is
+            // updated through the admin API.
+            ...(parsed.data.status?.toLowerCase() === "featured"
+                ? { status: "active" }
+                : {}),
+        };
+
         const project =
             await prisma.project.update({
                 where: { id },
-                data: parsed.data,
+                data,
             });
 
         return apiSuccess(project);

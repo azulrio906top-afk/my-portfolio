@@ -404,9 +404,10 @@ export default function PortfolioChatbot() {
     const [copiedId, setCopiedId] =
         useState<string | null>(null);
 
-    const [feedback, setFeedback] = useState<
-        Record<string, FeedbackValue>
-    >({});
+    const [feedback, setFeedback] = useState<Record<string, FeedbackValue>>({});
+    const [feedbackReason, setFeedbackReason] = useState<Record<string, string>>({});
+    const [feedbackComment, setFeedbackComment] = useState<Record<string, string>>({});
+    const [feedbackSubmitting, setFeedbackSubmitting] = useState<string | null>(null);
 
     const inputRef =
         useRef<HTMLTextAreaElement>(null);
@@ -692,6 +693,8 @@ export default function PortfolioChatbot() {
         setCopiedId(null);
 
         setFeedback({});
+        setFeedbackReason({});
+        setFeedbackComment({});
 
         if (inputRef.current) {
             inputRef.current.style.height =
@@ -812,17 +815,87 @@ export default function PortfolioChatbot() {
     |--------------------------------------------------------------------------
     */
 
-    function handleFeedback(
+    async function handleFeedback(
         messageId: string,
         value: FeedbackValue,
     ) {
-        setFeedback((current) => ({
-            ...current,
-            [messageId]:
-                current[messageId] === value
-                    ? undefined!
-                    : value,
-        }));
+        const current = feedback[messageId];
+
+        if (current === value) {
+            setFeedback((state) => {
+                const next = { ...state };
+                delete next[messageId];
+                return next;
+            });
+            try {
+                await fetch("/api/feedback", {
+                    method: "DELETE",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ messageId }),
+                });
+            } catch (error) {
+                console.error("Feedback removal failed:", error);
+            }
+            return;
+        }
+
+        const index = messages.findIndex((message) => message.id === messageId);
+        const message = messages[index];
+        if (!message || message.role !== "assistant" || message.error) return;
+
+        if (value === "down") {
+            setFeedback((state) => ({ ...state, [messageId]: value }));
+            return;
+        }
+
+        setFeedback((state) => ({ ...state, [messageId]: value }));
+        setFeedbackSubmitting(messageId);
+        try {
+            const previousUser = [...messages.slice(0, index)].reverse().find((item) => item.role === "user");
+            const response = await fetch("/api/feedback", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    messageId,
+                    value,
+                    question: previousUser?.content || "",
+                    answer: message.content,
+                }),
+            });
+            if (!response.ok) throw new Error("Feedback request failed");
+        } catch (error) {
+            console.error("Feedback save failed:", error);
+        } finally {
+            setFeedbackSubmitting(null);
+        }
+    }
+
+    async function submitNegativeFeedback(messageId: string) {
+        const index = messages.findIndex((message) => message.id === messageId);
+        const message = messages[index];
+        if (!message || message.role !== "assistant" || message.error) return;
+
+        setFeedbackSubmitting(messageId);
+        try {
+            const previousUser = [...messages.slice(0, index)].reverse().find((item) => item.role === "user");
+            const response = await fetch("/api/feedback", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    messageId,
+                    value: "down",
+                    reason: feedbackReason[messageId] || "other",
+                    comment: feedbackComment[messageId] || "",
+                    question: previousUser?.content || "",
+                    answer: message.content,
+                }),
+            });
+            if (!response.ok) throw new Error("Feedback request failed");
+        } catch (error) {
+            console.error("Negative feedback save failed:", error);
+        } finally {
+            setFeedbackSubmitting(null);
+        }
     }
 
     /*
@@ -1573,7 +1646,7 @@ export default function PortfolioChatbot() {
                                                                 <button
                                                                     type="button"
                                                                     onClick={() =>
-                                                                        handleFeedback(
+                                                                        void handleFeedback(
                                                                             message.id,
                                                                             "up",
                                                                         )
@@ -1609,7 +1682,7 @@ export default function PortfolioChatbot() {
                                                                 <button
                                                                     type="button"
                                                                     onClick={() =>
-                                                                        handleFeedback(
+                                                                        void handleFeedback(
                                                                             message.id,
                                                                             "down",
                                                                         )
@@ -1637,6 +1710,44 @@ export default function PortfolioChatbot() {
                                                                 >
                                                                     <ThumbsDown className="h-3.5 w-3.5" />
                                                                 </button>
+                                                            )}
+
+                                                            {!message.error && currentFeedback === "down" && (
+                                                                <div className="ml-1 mt-2 w-full max-w-[280px] rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+                                                                    <p className="text-[11px] font-semibold text-slate-700">What could be improved?</p>
+                                                                    <div className="mt-2 grid grid-cols-2 gap-1.5">
+                                                                        {[
+                                                                            ["incorrect", "Incorrect info"],
+                                                                            ["did-not-answer", "Didn't answer"],
+                                                                            ["too-vague", "Too vague"],
+                                                                            ["too-long", "Too long"],
+                                                                        ].map(([value, label]) => (
+                                                                            <button
+                                                                                key={value}
+                                                                                type="button"
+                                                                                onClick={() => setFeedbackReason((state) => ({ ...state, [message.id]: value }))}
+                                                                                className={`rounded-lg border px-2 py-1.5 text-[10px] transition ${feedbackReason[message.id] === value ? "border-sky-300 bg-sky-50 text-sky-700" : "border-slate-200 text-slate-500 hover:bg-slate-50"}`}
+                                                                            >
+                                                                                {label}
+                                                                            </button>
+                                                                        ))}
+                                                                    </div>
+                                                                    <textarea
+                                                                        value={feedbackComment[message.id] || ""}
+                                                                        onChange={(event) => setFeedbackComment((state) => ({ ...state, [message.id]: event.target.value.slice(0, 500) }))}
+                                                                        placeholder="Optional comment"
+                                                                        rows={2}
+                                                                        className="mt-2 w-full resize-none rounded-lg border border-slate-200 px-2.5 py-2 text-[10px] outline-none focus:border-sky-300"
+                                                                    />
+                                                                    <button
+                                                                        type="button"
+                                                                        disabled={feedbackSubmitting === message.id}
+                                                                        onClick={() => void submitNegativeFeedback(message.id)}
+                                                                        className="mt-2 rounded-lg bg-slate-900 px-3 py-1.5 text-[10px] font-semibold text-white disabled:opacity-50"
+                                                                    >
+                                                                        {feedbackSubmitting === message.id ? "Saving…" : "Send feedback"}
+                                                                    </button>
+                                                                </div>
                                                             )}
 
                                                             {/* Retry */}

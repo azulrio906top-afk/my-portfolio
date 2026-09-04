@@ -22,6 +22,7 @@ import {
     Home,
     LayoutDashboard,
     Menu,
+    MessageSquareText,
     Moon,
     MoreHorizontal,
     PencilLine,
@@ -37,7 +38,7 @@ import {
     X,
     Zap,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type Skill = {
     id: number;
@@ -146,6 +147,7 @@ type Tab =
     | "projects"
     | "experience"
     | "assistant"
+    | "feedback"
     | "settings";
 
 type Theme = "light" | "dark";
@@ -305,6 +307,11 @@ export function AdminDashboard({
                     id: "assistant" as Tab,
                     label: "AI Assistant",
                     icon: Bot,
+                },
+                {
+                    id: "feedback" as Tab,
+                    label: "AI Feedback",
+                    icon: MessageSquareText,
                 },
                 {
                     id: "settings" as Tab,
@@ -936,6 +943,10 @@ export function AdminDashboard({
                             <AssistantView
                                 dark={dark}
                             />
+                        )}
+
+                        {activeTab === "feedback" && (
+                            <FeedbackView dark={dark} />
                         )}
 
                         {activeTab === "settings" && (
@@ -2520,15 +2531,19 @@ function ProjectForm({
                     className="admin-input md:col-span-2"
                 />
 
-                <input
+                <select
                     name="status"
                     defaultValue={
-                        project?.status ??
-                        "active"
+                        project?.status?.toLowerCase() === "featured"
+                            ? "active"
+                            : project?.status ?? "active"
                     }
-                    placeholder="Status"
                     className="admin-input"
-                />
+                >
+                    <option value="active">Active</option>
+                    <option value="draft">Draft</option>
+                    <option value="archived">Archived</option>
+                </select>
 
                 <label
                     className={`
@@ -2550,6 +2565,20 @@ function ProjectForm({
                             project?.featured ??
                             false
                         }
+                        onChange={(event) => {
+                            // Featured is a presentation flag. When it is
+                            // changed, keep the project lifecycle status
+                            // normalized to `active` instead of leaving the
+                            // legacy `featured` value behind.
+                            const status =
+                                event.currentTarget.form?.elements.namedItem(
+                                    "status",
+                                ) as HTMLSelectElement | null;
+
+                            if (status) {
+                                status.value = "active";
+                            }
+                        }}
                         className="h-4 w-4 accent-blue-600"
                     />
 
@@ -4020,6 +4049,11 @@ function CommandModal({
             icon: Bot,
         },
         {
+            label: "AI Feedback",
+            tab: "feedback",
+            icon: MessageSquareText,
+        },
+        {
             label: "Settings",
             tab: "settings",
             icon: Settings,
@@ -4124,6 +4158,110 @@ function CommandModal({
 }
 
 /* =========================================================
+   AI FEEDBACK
+========================================================= */
+
+function FeedbackView({ dark }: { dark: boolean }) {
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [data, setData] = useState<{
+        feedback: Array<{
+            id: string;
+            messageId: string;
+            value: string;
+            reason: string | null;
+            comment: string | null;
+            question: string | null;
+            answer: string;
+            createdAt: string;
+        }>;
+        stats: {
+            total: number;
+            helpful: number;
+            notHelpful: number;
+            helpfulRate: number;
+        };
+    } | null>(null);
+
+    async function load() {
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await fetch("/api/feedback?limit=100", { cache: "no-store" });
+            const payload = await response.json();
+            if (!response.ok) throw new Error(payload.error || "Unable to load feedback.");
+            setData(payload);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Unable to load feedback.");
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    useEffect(() => { void load(); }, []);
+
+    const card = dark ? "border-slate-800 bg-[#0c1524]" : "border-slate-200 bg-white";
+    const muted = dark ? "text-slate-400" : "text-slate-500";
+
+    return (
+        <div className="space-y-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-blue-600">Quality signal</p>
+                    <h1 className="mt-2 text-2xl font-bold sm:text-3xl">AI Feedback</h1>
+                    <p className={`mt-2 text-sm ${muted}`}>See how visitors rate the portfolio assistant and where answers can improve.</p>
+                </div>
+                <button type="button" onClick={() => void load()} className={`rounded-xl border px-4 py-2 text-xs font-bold ${dark ? "border-slate-700 hover:bg-slate-900" : "border-slate-200 hover:bg-slate-50"}`}>Refresh</button>
+            </div>
+
+            {error && <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>}
+
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                {[
+                    ["Total feedback", data?.stats.total ?? 0],
+                    ["Helpful", data?.stats.helpful ?? 0],
+                    ["Not helpful", data?.stats.notHelpful ?? 0],
+                    ["Helpful rate", `${data?.stats.helpfulRate ?? 0}%`],
+                ].map(([label, value]) => (
+                    <div key={String(label)} className={`rounded-2xl border p-5 ${card}`}>
+                        <p className={`text-[10px] font-bold uppercase tracking-[0.16em] ${muted}`}>{label}</p>
+                        <p className="mt-3 text-3xl font-bold">{value}</p>
+                    </div>
+                ))}
+            </div>
+
+            <div className={`overflow-hidden rounded-3xl border ${card}`}>
+                <div className={`border-b px-5 py-4 ${dark ? "border-slate-800" : "border-slate-100"}`}>
+                    <h2 className="text-sm font-bold">Recent feedback</h2>
+                </div>
+                {loading ? (
+                    <div className={`p-8 text-center text-sm ${muted}`}>Loading feedback…</div>
+                ) : !data?.feedback.length ? (
+                    <div className={`p-10 text-center text-sm ${muted}`}>No feedback yet. It will appear here after visitors rate an assistant answer.</div>
+                ) : (
+                    <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                        {data.feedback.map((item) => (
+                            <div key={item.id} className="p-5">
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${item.value === "up" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>
+                                        {item.value === "up" ? "👍 Helpful" : "👎 Not helpful"}
+                                    </span>
+                                    {item.reason && <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${dark ? "bg-slate-800 text-slate-300" : "bg-slate-100 text-slate-600"}`}>{item.reason}</span>}
+                                    <span className={`ml-auto text-[10px] ${muted}`}>{new Date(item.createdAt).toLocaleString()}</span>
+                                </div>
+                                {item.question && <p className="mt-4 text-xs font-semibold">Q: {item.question}</p>}
+                                <p className={`mt-2 line-clamp-3 text-xs leading-5 ${muted}`}>A: {item.answer}</p>
+                                {item.comment && <p className="mt-3 rounded-xl bg-amber-50 p-3 text-xs text-amber-900">“{item.comment}”</p>}
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+/* =========================================================
    HELPERS
 ========================================================= */
 
@@ -4141,6 +4279,8 @@ function tabTitle(tab: Tab) {
             return "Experience";
         case "assistant":
             return "AI Assistant";
+        case "feedback":
+            return "AI Feedback";
         case "settings":
             return "Settings";
         default:

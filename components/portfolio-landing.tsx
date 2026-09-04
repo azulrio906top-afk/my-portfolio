@@ -3,6 +3,7 @@
 import {
     useEffect,
     useMemo,
+    useRef,
     useState,
 } from "react";
 
@@ -200,6 +201,86 @@ function parseTags(tags?: string | null) {
         .split(",")
         .map((tag) => tag.trim())
         .filter(Boolean);
+}
+
+function ProjectPreview({
+    project,
+}: {
+    project: ProjectItem;
+}) {
+    const viewportRef = useRef<HTMLDivElement | null>(null);
+    const imageRef = useRef<HTMLImageElement | null>(null);
+    const [isScrollable, setIsScrollable] = useState(false);
+
+    const updateScrollable = () => {
+        const viewport = viewportRef.current;
+        const image = imageRef.current;
+
+        if (!viewport || !image) {
+            return;
+        }
+
+        setIsScrollable(
+            viewport.scrollHeight > viewport.clientHeight + 4 ||
+                viewport.scrollWidth > viewport.clientWidth + 4,
+        );
+    };
+
+    useEffect(() => {
+        const image = imageRef.current;
+
+        if (!image) {
+            return;
+        }
+
+        updateScrollable();
+
+        const resizeObserver =
+            typeof ResizeObserver !== "undefined"
+                ? new ResizeObserver(updateScrollable)
+                : null;
+
+        resizeObserver?.observe(image);
+        window.addEventListener("resize", updateScrollable, { passive: true });
+
+        return () => {
+            resizeObserver?.disconnect();
+            window.removeEventListener("resize", updateScrollable);
+        };
+    }, [project.imageUrl]);
+
+    return (
+        <div
+            ref={viewportRef}
+            className="project-preview-scroll absolute inset-x-0 bottom-0 top-9 overflow-auto overscroll-contain bg-slate-900"
+            aria-label={`${project.title} preview. Scroll to explore the full image when needed.`}
+        >
+            {project.imageUrl ? (
+                <img
+                    ref={imageRef}
+                    src={project.imageUrl}
+                    alt={`${project.title} project preview`}
+                    onLoad={updateScrollable}
+                    className="block h-auto min-h-full w-full max-w-none object-contain object-top align-top transition duration-500 group-hover:brightness-105"
+                />
+            ) : (
+                <div className="flex min-h-full items-center justify-center bg-gradient-to-br from-sky-500/20 via-slate-900 to-slate-950">
+                    <Code2 className="h-16 w-16 text-sky-400/60" />
+                </div>
+            )}
+
+            {isScrollable && (
+                <>
+                    <div className="pointer-events-none sticky bottom-0 left-0 right-0 flex justify-center pb-3">
+                        <span className="rounded-full border border-white/15 bg-black/55 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.16em] text-white shadow-lg backdrop-blur-xl">
+                            Scroll to explore
+                        </span>
+                    </div>
+                    <div className="pointer-events-none sticky bottom-0 left-0 right-0 -mt-14 h-14 bg-gradient-to-t from-slate-950/80 to-transparent" />
+                </>
+            )}
+        </div>
+    );
 }
 
 /* ================================================================
@@ -1066,7 +1147,7 @@ export function PortfolioLanding({
                                 }}
                                 className="mb-3 text-xs font-black uppercase tracking-[0.28em] text-sky-500"
                             >
-                                Full-Stack AI Developer � Product Builder
+                                Full-Stack AI Developer · Product Builder
                             </motion.p>
 
                             <motion.div
@@ -1646,7 +1727,7 @@ export function PortfolioLanding({
                                                 <motion.div
                                                     whileHover={{ scale: 1.025, y: -3 }}
                                                     transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-                                                    className="absolute inset-5 overflow-hidden rounded-[22px] border border-white/10 bg-slate-900 shadow-2xl sm:inset-7"
+                                                    className="absolute inset-2.5 overflow-hidden rounded-[18px] border border-white/10 bg-slate-900 shadow-2xl sm:inset-3.5"
                                                 >
                                                     <div className="flex h-9 items-center gap-1.5 border-b border-white/10 bg-slate-950/90 px-4">
                                                         <span className="h-2.5 w-2.5 rounded-full bg-red-400/70" />
@@ -1655,19 +1736,7 @@ export function PortfolioLanding({
                                                         <div className="mx-auto h-5 w-2/5 rounded-md border border-white/10 bg-white/[0.04]" />
                                                     </div>
 
-                                                    {project.imageUrl ? (
-                                                        <img
-                                                            src={project.imageUrl}
-                                                            alt={`${project.title} project preview`}
-                                                            className="h-[calc(100%-36px)] w-full object-cover object-center transition duration-700 group-hover:scale-[1.035]"
-                                                        />
-                                                    ) : (
-                                                        <div className="flex h-[calc(100%-36px)] items-center justify-center bg-gradient-to-br from-sky-500/20 via-slate-900 to-slate-950">
-                                                            <Code2 className="h-16 w-16 text-sky-400/60" />
-                                                        </div>
-                                                    )}
-
-                                                    <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/60 to-transparent" />
+                                                    <ProjectPreview project={project} />
                                                 </motion.div>
 
                                                 <div className="absolute bottom-7 left-7 z-10 flex items-center gap-2 rounded-full border border-white/10 bg-black/45 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.16em] text-white backdrop-blur-xl">
@@ -1826,7 +1895,7 @@ export function PortfolioLanding({
                             </div>
                             <div>
                                 <p className={`text-sm font-black ${heading}`}>Portfolio AI</p>
-                                <p className="text-xs text-emerald-500">Online � Ready to answer</p>
+                                <p className="text-xs text-emerald-500">Online · Ready to answer</p>
                             </div>
                         </div>
 
@@ -1835,12 +1904,12 @@ export function PortfolioLanding({
                                 What kind of products can you build?
                             </div>
                             <div className={`max-w-[88%] rounded-2xl rounded-bl-md border px-4 py-3 text-sm leading-6 ${softPanel}`}>
-                                Full-stack web apps, SaaS dashboards, business platforms and AI-powered experiences � with a focus on usability, performance and maintainable architecture.
+                                Full-stack web apps, SaaS dashboards, business platforms and AI-powered experiences — with a focus on usability, performance and maintainable architecture.
                             </div>
                         </div>
 
                         <div className={`rounded-2xl border px-4 py-3 text-xs ${tagClass}`}>
-                            Try asking about projects, skills, architecture or experience ?
+                            Try asking about projects, skills, architecture or experience →
                         </div>
                     </motion.div>
                 </div>
