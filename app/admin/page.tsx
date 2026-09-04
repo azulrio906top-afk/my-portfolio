@@ -65,6 +65,11 @@ async function loadProjects() {
             orderBy: {
                 createdAt: "desc",
             },
+            include: {
+                projectSkills: {
+                    include: { skill: true },
+                },
+            },
         });
     } catch (error) {
         if (isMissingTableError(error)) {
@@ -117,7 +122,10 @@ export default async function AdminPage() {
             <AdminDashboard
                 profile={profile}
                 skills={skills}
-                projects={projects}
+                projects={projects.map((project) => ({
+                    ...project,
+                    skills: project.projectSkills.map(({ skill }) => skill),
+                }))}
                 experiences={experiences}
                 updateProfileAction={updateProfile}
                 createSkillAction={createSkill}

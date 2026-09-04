@@ -47,6 +47,12 @@ type Skill = {
     order: number;
 };
 
+type ProjectSkill = {
+    id: number;
+    name: string;
+    category: string;
+};
+
 type Project = {
     id: number;
     title: string;
@@ -59,6 +65,7 @@ type Project = {
     tags: string;
     featured: boolean;
     description: string;
+    skills?: ProjectSkill[];
 };
 
 type Experience = {
@@ -895,6 +902,7 @@ export function AdminDashboard({
                                 projects={
                                     filteredProjects
                                 }
+                                skills={skills}
                                 search={
                                     projectSearch
                                 }
@@ -2216,6 +2224,7 @@ function SkillsView({
 function ProjectsView({
     dark,
     projects,
+    skills,
     search,
     setSearch,
     createProjectAction,
@@ -2225,6 +2234,7 @@ function ProjectsView({
 }: {
     dark: boolean;
     projects: Project[];
+    skills: Skill[];
     search: string;
     setSearch: (value: string) => void;
     createProjectAction: (
@@ -2303,6 +2313,7 @@ function ProjectsView({
             {showCreate && (
                 <ProjectForm
                     dark={dark}
+                    skills={skills}
                     create
                     action={createProjectAction}
                     onSubmit={(formData) => {
@@ -2343,6 +2354,7 @@ function ProjectsView({
                         <ProjectForm
                             key={project.id}
                             dark={dark}
+                            skills={skills}
                             project={project}
                             action={
                                 updateProjectAction
@@ -2389,6 +2401,7 @@ function ProjectsView({
 function ProjectForm({
     dark,
     project,
+    skills = [],
     create,
     action,
     deleteAction,
@@ -2397,6 +2410,7 @@ function ProjectForm({
 }: {
     dark: boolean;
     project?: Project;
+    skills?: Skill[];
     create?: boolean;
     action: (
         formData: FormData,
@@ -2530,6 +2544,25 @@ function ProjectForm({
                     placeholder="NEXT.JS, REACT, TYPESCRIPT"
                     className="admin-input md:col-span-2"
                 />
+
+                <div className={`md:col-span-2 rounded-xl border p-4 ${dark ? "border-slate-700 bg-slate-950/40" : "border-slate-200 bg-slate-50"}`}>
+                    <div className="mb-3">
+                        <p className="text-xs font-bold">Project skill set</p>
+                        <p className="mt-1 text-[10px] text-slate-500">Select skills from your Skills database. These are stored separately from display tags.</p>
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                        {skills.map((skill) => {
+                            const checkedSkill = project?.skills?.some((item) => item.id === skill.id) ?? false;
+                            return (
+                                <label key={skill.id} className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-xs ${dark ? "border-slate-800 hover:border-slate-600" : "border-slate-200 hover:border-slate-300"}`}>
+                                    <input type="checkbox" name="skillIds" value={skill.id} defaultChecked={checkedSkill} className="h-4 w-4 accent-blue-600" />
+                                    <span className="min-w-0 truncate font-medium">{skill.name}</span>
+                                    <span className="ml-auto text-[9px] text-slate-400">{skill.category}</span>
+                                </label>
+                            );
+                        })}
+                    </div>
+                </div>
 
                 <select
                     name="status"

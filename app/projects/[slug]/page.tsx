@@ -13,7 +13,10 @@ type PageProps = {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   await ensureDatabase();
   const { slug } = await params;
-  const project = await prisma.project.findUnique({ where: { slug } });
+  const project = await prisma.project.findUnique({
+    where: { slug },
+    include: { projectSkills: { include: { skill: true } } },
+  });
 
   if (!project) {
     return { title: "Project not found" };
@@ -33,7 +36,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function ProjectCaseStudy({ params }: PageProps) {
   await ensureDatabase();
   const { slug } = await params;
-  const project = await prisma.project.findUnique({ where: { slug } });
+  const project = await prisma.project.findUnique({
+    where: { slug },
+    include: { projectSkills: { include: { skill: true } } },
+  });
 
   if (!project) {
     return (
@@ -50,6 +56,7 @@ export default async function ProjectCaseStudy({ params }: PageProps) {
   }
 
   const tags = project.tags.split(",").map((tag : string) => tag.trim()).filter(Boolean);
+  const skills = project.projectSkills.map(({ skill }) => skill);
   const hasLiveUrl = Boolean(project.url);
   const hasGithub = Boolean(project.githubUrl);
 
@@ -76,6 +83,21 @@ export default async function ProjectCaseStudy({ params }: PageProps) {
           <p className="mt-7 max-w-3xl text-lg leading-8 text-slate-300 sm:text-xl">
             {project.summary}
           </p>
+
+          {(skills.length > 0 || tags.length > 0) && (
+            <div className="mt-7 flex flex-wrap gap-2">
+              {skills.map((skill) => (
+                <span key={`skill-${skill.id}`} className="rounded-full border border-sky-400/20 bg-sky-400/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-sky-200">
+                  {skill.name}
+                </span>
+              ))}
+              {tags.filter((tag) => !skills.some((skill) => skill.name.toLowerCase() === tag.toLowerCase())).map((tag) => (
+                <span key={`tag-${tag}`} className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-300">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
 
           <div className="mt-8 flex flex-wrap gap-3">
             {hasLiveUrl ? (

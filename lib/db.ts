@@ -7,6 +7,8 @@ type PrismaClientLike = {
   profile: any;
   experience: any;
   chatFeedback: any;
+  projectSkill: any;
+  $transaction: <T>(callback: (tx: PrismaClientLike) => Promise<T>) => Promise<T>;
   $disconnect: () => Promise<void>;
   $on: (...args: any[]) => void;
   $queryRawUnsafe: <T = unknown>(query: string, ...values: any[]) => Promise<T>;
@@ -110,6 +112,14 @@ const createStatements = [
     "createdAt" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   )`,
+
+  `CREATE TABLE IF NOT EXISTS "ProjectSkill" (
+    "projectId" INTEGER NOT NULL,
+    "skillId" INTEGER NOT NULL,
+    PRIMARY KEY ("projectId", "skillId"),
+    CONSTRAINT "ProjectSkill_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "ProjectSkill_skillId_fkey" FOREIGN KEY ("skillId") REFERENCES "Skill" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+  )`,
 ];
 
 const indexStatements = [
@@ -121,6 +131,7 @@ const indexStatements = [
   `CREATE INDEX IF NOT EXISTS "Experience_current_idx" ON "Experience"("current")`,
   `CREATE INDEX IF NOT EXISTS "ChatFeedback_value_idx" ON "ChatFeedback"("value")`,
   `CREATE INDEX IF NOT EXISTS "ChatFeedback_createdAt_idx" ON "ChatFeedback"("createdAt")`,
+  `CREATE INDEX IF NOT EXISTS "ProjectSkill_skillId_idx" ON "ProjectSkill"("skillId")`,
 ];
 
 async function rebuildDatabase() {
@@ -146,7 +157,7 @@ export async function ensureDatabase() {
       );
 
       const tableSet = new Set(existingTables.map((row) => row.name));
-      const missing = ['Skill', 'Project', 'AdminUser', 'Profile', 'Experience', 'ChatFeedback'].filter((table) => !tableSet.has(table));
+      const missing = ['Skill', 'Project', 'AdminUser', 'Profile', 'Experience', 'ChatFeedback', 'ProjectSkill'].filter((table) => !tableSet.has(table));
 
       if (missing.length > 0) {
         await rebuildDatabase();

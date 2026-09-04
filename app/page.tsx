@@ -39,6 +39,9 @@ export default async function HomePage() {
     prisma.profile.findFirst({ orderBy: { id: "asc" } }).catch(() => null),
     prisma.skill.findMany({ orderBy: { order: "asc" } }).catch(() => []),
     prisma.project.findMany({
+      include: {
+        projectSkills: { include: { skill: true } },
+      },
       orderBy: [
         { featured: "desc" },
         { createdAt: "desc" },
@@ -50,7 +53,10 @@ export default async function HomePage() {
     <PortfolioLanding
       profile={profile ?? fallbackProfile}
       skillList={skills.length ? skills : fallbackSkills}
-      projectList={projects}
+      projectList={projects.map((project) => ({
+        ...project,
+        skills: project.projectSkills.map(({ skill }) => skill),
+      }))}
     />
   );
 }

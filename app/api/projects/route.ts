@@ -6,6 +6,7 @@ import {
 import { requireAdmin } from "@/lib/admin-auth";
 import {
     projectCreateSchema,
+    projectUpdateSchema,
 } from "@/lib/admin-validation";
 
 export async function GET() {
@@ -30,6 +31,9 @@ export async function GET() {
                         createdAt: "desc",
                     },
                 ],
+                include: {
+                    projectSkills: { include: { skill: true } },
+                },
             });
 
         return apiSuccess(projects);
@@ -86,8 +90,15 @@ export async function POST(
             );
         }
 
+        const skillIds = Array.from(new Set((body.skillIds ?? [])
+            .map((value: unknown) => Number(value))
+            .filter((value: number) => Number.isInteger(value) && value > 0)));
+
         const data = {
             ...parsed.data,
+            projectSkills: {
+                create: skillIds.map((skillId: number) => ({ skill: { connect: { id: skillId } } })),
+            },
             status:
                 parsed.data.status?.toLowerCase() === "featured"
                     ? "active"
@@ -133,8 +144,16 @@ export async function PATCH(request: Request) {
             return apiError("Invalid project data.", 400, parsed.error.flatten());
         }
 
+        const skillIds = Array.from(new Set((body.skillIds ?? [])
+            .map((value: unknown) => Number(value))
+            .filter((value: number) => Number.isInteger(value) && value > 0)));
+
         const data = {
             ...parsed.data,
+            projectSkills: {
+                deleteMany: {},
+                create: skillIds.map((skillId: number) => ({ skill: { connect: { id: skillId } } })),
+            },
             status: parsed.data.featured
                 ? "active"
                 : parsed.data.status?.toLowerCase() === "featured"

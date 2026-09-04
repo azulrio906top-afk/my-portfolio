@@ -300,6 +300,9 @@ export async function createProject(
     );
 
     const tags = text(formData, "tags");
+    const skillIds = Array.from(new Set(formData.getAll("skillIds")
+        .map((value) => Number(value))
+        .filter((value) => Number.isInteger(value) && value > 0)));
 
     const featured = checked(
         formData,
@@ -359,6 +362,11 @@ export async function createProject(
                 tags,
                 featured,
                 status,
+                projectSkills: {
+                    create: skillIds.map((skillId) => ({
+                        skill: { connect: { id: skillId } },
+                    })),
+                },
             },
         });
 
@@ -403,6 +411,9 @@ export async function updateProject(
     );
 
     const tags = text(formData, "tags");
+    const skillIds = Array.from(new Set(formData.getAll("skillIds")
+        .map((value) => Number(value))
+        .filter((value) => Number.isInteger(value) && value > 0)));
 
     const featured = checked(
         formData,
@@ -492,6 +503,12 @@ export async function updateProject(
                     // Featured is a presentation flag; the lifecycle status
                     // remains `active` when a project is featured.
                     status: featured ? "active" : status,
+                    projectSkills: {
+                        deleteMany: {},
+                        create: skillIds.map((skillId) => ({
+                            skill: { connect: { id: skillId } },
+                        })),
+                    },
                 },
             });
         });

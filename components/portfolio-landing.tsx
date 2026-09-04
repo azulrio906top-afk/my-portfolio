@@ -71,6 +71,7 @@ type ProjectItem = {
     githubUrl?: string | null;
     imageUrl?: string | null;
     tags?: string | null;
+    skills?: Array<{ id: number; name: string; category: string }>;
 };
 
 type PortfolioLandingProps = {
@@ -1697,6 +1698,8 @@ export function PortfolioLanding({
                         <div className="space-y-7">
                             {visibleProjects.map((project, index) => {
                                 const tags = parseTags(project.tags);
+                                const skillNames = (project.skills ?? []).map((skill) => skill.name);
+                                const displayTags = Array.from(new Set([...skillNames, ...tags]));
                                 const isFeatured = project.featured === true;
                                 const hasLiveUrl = Boolean(project.url);
                                 const hasGithub = Boolean(project.githubUrl);
@@ -1763,9 +1766,9 @@ export function PortfolioLanding({
                                                         {project.summary}
                                                     </p>
 
-                                                    {tags.length > 0 && (
+                                                    {displayTags.length > 0 && (
                                                         <div className="mt-6 flex flex-wrap gap-2">
-                                                            {tags.slice(0, isFeatured ? 7 : 5).map((tag) => (
+                                                            {displayTags.slice(0, isFeatured ? 7 : 5).map((tag) => (
                                                                 <span key={tag} className={`rounded-full border px-3 py-1.5 text-[9px] font-semibold uppercase tracking-[0.13em] ${tagClass}`}>
                                                                     {tag}
                                                                 </span>

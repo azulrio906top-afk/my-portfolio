@@ -344,7 +344,7 @@ async function main() {
 
             featured: true,
 
-            status: "featured",
+            status: "active",
 
             tags:
                 "Next.js, React, TypeScript, AI, OpenAI, Tailwind CSS",

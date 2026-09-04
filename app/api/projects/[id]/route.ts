@@ -53,6 +53,9 @@ export async function GET(
         const project =
             await prisma.project.findUnique({
                 where: { id },
+                include: {
+                    projectSkills: { include: { skill: true } },
+                },
             });
 
         if (!project) {
@@ -115,6 +118,17 @@ export async function PATCH(
             );
         }
 
+        const skillIds: number[] = Array.from(
+            new Set(
+                (Array.isArray(body.skillIds) ? body.skillIds : [])
+                    .map((value: unknown) => Number(value))
+                    .filter(
+                        (value: number) =>
+                            Number.isInteger(value) && value > 0,
+                    ),
+            ),
+        );
+
         const existing =
             await prisma.project.findUnique({
                 where: { id },
@@ -152,13 +166,30 @@ export async function PATCH(
             ...(parsed.data.status?.toLowerCase() === "featured"
                 ? { status: "active" }
                 : {}),
+            projectSkills: {
+                deleteMany: {},
+                create: skillIds.map((skillId) => ({
+                    skill: { connect: { id: skillId } },
+                })),
+            },
         };
 
-        const project =
-            await prisma.project.update({
+        const project = await prisma.$transaction(async (tx) => {
+            if (data.featured === true) {
+                await tx.project.updateMany({
+                    where: { id: { not: id }, featured: true },
+                    data: { featured: false },
+                });
+            }
+
+            return tx.project.update({
                 where: { id },
                 data,
+                include: {
+                    projectSkills: { include: { skill: true } },
+                },
             });
+        });
 
         return apiSuccess(project);
     } catch (error) {
