@@ -1,20 +1,20 @@
 generator client {
   provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/sqlite-client"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 model Skill {
-  id        Int      @id @default(autoincrement())
-  name      String   @unique
-  category  String
-  order     Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            Int            @id @default(autoincrement())
+  name          String         @unique
+  category      String
+  order         Int            @default(0)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   projectSkills ProjectSkill[]
 
   @@index([category])
@@ -22,19 +22,19 @@ model Skill {
 }
 
 model Project {
-  id          Int      @id @default(autoincrement())
-  title       String
-  slug        String   @unique
-  summary     String
-  description String
-  url         String?
-  githubUrl   String?
-  imageUrl    String?
-  featured    Boolean  @default(false)
-  status      String   @default("active")
-  tags        String   @default("")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            Int            @id @default(autoincrement())
+  title         String
+  slug          String         @unique
+  summary       String
+  description   String
+  url           String?
+  githubUrl     String?
+  imageUrl      String?
+  featured      Boolean        @default(false)
+  status        String         @default("active")
+  tags          String         @default("")
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   projectSkills ProjectSkill[]
 
   @@index([featured])
@@ -83,6 +83,7 @@ model Experience {
 
   @@index([current])
 }
+
 model ChatFeedback {
   id         String   @id @default(cuid())
   messageId  String   @unique
@@ -97,11 +98,13 @@ model ChatFeedback {
   @@index([value])
   @@index([createdAt])
 }
+
 model ProjectSkill {
   projectId Int
   skillId   Int
-  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  skill     Skill   @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  skill   Skill   @relation(fields: [skillId], references: [id], onDelete: Cascade)
 
   @@id([projectId, skillId])
   @@index([skillId])
