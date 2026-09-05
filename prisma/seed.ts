@@ -211,27 +211,27 @@ async function main() {
          */
         {
             name: "PostgreSQL",
-            category: "data",
+            category: "database",
             order: 1,
         },
         {
             name: "SQLite",
-            category: "data",
+            category: "database",
             order: 2,
         },
         {
             name: "MongoDB",
-            category: "data",
+            category: "database",
             order: 3,
         },
         {
             name: "Prisma",
-            category: "data",
+            category: "database",
             order: 4,
         },
         {
             name: "Redis",
-            category: "data",
+            category: "database",
             order: 5,
         },
 
@@ -265,26 +265,26 @@ async function main() {
         },
 
         /*
-         * Engineering
+         * DevOps
          */
         {
             name: "Git",
-            category: "engineering",
+            category: "devops",
             order: 1,
         },
         {
             name: "GitHub",
-            category: "engineering",
+            category: "devops",
             order: 2,
         },
         {
             name: "Docker",
-            category: "engineering",
+            category: "devops",
             order: 3,
         },
         {
             name: "Vitest",
-            category: "engineering",
+            category: "devops",
             order: 4,
         },
     ];
@@ -511,78 +511,6 @@ async function main() {
     console.log(
         `✓ Projects: ${projects.length}`,
     );
-
-    /*
-     * =========================================================
-     * PROJECT SKILLS
-     * =========================================================
-     */
-
-    const projectSkillMap: Record<string, string[]> = {
-        "ai-portfolio-assistant": [
-            "Next.js",
-            "React",
-            "TypeScript",
-            "AI Assistants",
-            "OpenAI",
-            "LLM Integration",
-            "Tailwind CSS",
-        ],
-        "saas-analytics-dashboard": [
-            "React",
-            "Next.js",
-            "TypeScript",
-            "Tailwind CSS",
-        ],
-        "business-management-platform": [
-            "Next.js",
-            "Node.js",
-            "Prisma",
-            "REST APIs",
-        ],
-        "ai-workflow-automation": [
-            "AI Integration",
-            "AI Automation",
-            "Node.js",
-            "REST APIs",
-            "TypeScript",
-        ],
-        "developer-portfolio-platform": [
-            "Next.js",
-            "TypeScript",
-            "Prisma",
-            "NextAuth",
-        ],
-    };
-
-    for (const [slug, skillNames] of Object.entries(projectSkillMap)) {
-        const project = await prisma.project.findUnique({
-            where: { slug },
-        });
-
-        if (!project) continue;
-
-        await prisma.projectSkill.deleteMany({
-            where: { projectId: project.id },
-        });
-
-        for (const skillName of skillNames) {
-            const skill = await prisma.skill.findUnique({
-                where: { name: skillName },
-            });
-
-            if (!skill) continue;
-
-            await prisma.projectSkill.create({
-                data: {
-                    projectId: project.id,
-                    skillId: skill.id,
-                },
-            });
-        }
-    }
-
-    console.log("✓ Project skills linked");
 
     /*
      * =========================================================

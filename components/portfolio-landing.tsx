@@ -19,19 +19,20 @@ import {
     ChevronRight,
     Code2,
     Database,
-    Download,
     ExternalLink,
     // Github,
     Eye,
-    FileText,
     ArrowUpRight,
     Bot,
+    Download,
+    FileText,
     Layers3,
     Mail,
     Menu,
     Moon,
     Palette,
     Server,
+    GitBranch,
     Sparkles,
     SunMedium,
     X,
@@ -145,23 +146,38 @@ const fallbackSkillGroups = {
         "React",
         "Next.js",
         "TypeScript",
+        "JavaScript",
         "Tailwind CSS",
+        "Zustand",
+        "HTML5",
+        "CSS3",
     ],
     backend: [
         "Node.js",
         "Express",
         "REST APIs",
+        "Authentication",
+        "NextAuth",
     ],
-    data: [
+    database: [
         "PostgreSQL",
+        "SQLite",
         "MongoDB",
         "Prisma",
-        "SQLite",
+        "Redis",
     ],
     ai: [
         "AI Integration",
         "AI Assistants",
-        "Automation",
+        "OpenAI",
+        "LLM Integration",
+        "AI Automation",
+    ],
+    devops: [
+        "Git",
+        "GitHub",
+        "Docker",
+        "Vitest",
     ],
 };
 
@@ -494,75 +510,40 @@ export function PortfolioLanding({
             return fallbackSkillGroups;
         }
 
-        const frontend: string[] = [];
-        const backend: string[] = [];
-        const data: string[] = [];
-        const ai: string[] = [];
+        const groups = {
+            frontend: [] as string[],
+            backend: [] as string[],
+            database: [] as string[],
+            ai: [] as string[],
+            devops: [] as string[],
+        };
 
         skillList.forEach((skill) => {
-            const name =
-                skill.name.toLowerCase();
+            const category = (skill.category ?? "")
+                .trim()
+                .toLowerCase()
+                .replace(/[&_\s-]+/g, "");
 
-            if (
-                name.includes("react") ||
-                name.includes("next") ||
-                name.includes("typescript") ||
-                name.includes("javascript") ||
-                name.includes("tailwind") ||
-                name.includes("css") ||
-                name.includes("html") ||
-                name.includes("zustand") ||
-                name.includes("frontend")
-            ) {
-                frontend.push(skill.name);
-                return;
+            // Categories come from the database. Normalize common legacy names
+            // so old records cannot accidentally appear in the wrong group.
+            if (category === "frontend" || category === "front") {
+                groups.frontend.push(skill.name);
+            } else if (category === "backend" || category === "back") {
+                groups.backend.push(skill.name);
+            } else if (category === "data" || category === "database" || category === "databases") {
+                groups.database.push(skill.name);
+            } else if (category === "ai" || category === "aiautomation" || category === "aiandautomation") {
+                groups.ai.push(skill.name);
+            } else if (category === "devops" || category === "engineering") {
+                groups.devops.push(skill.name);
+            } else {
+                // Never hide an unknown skill. Put it in DevOps as the safest
+                // visible fallback rather than mislabeling it as Frontend.
+                groups.devops.push(skill.name);
             }
-
-            if (
-                name.includes("node") ||
-                name.includes("express") ||
-                name.includes("api") ||
-                name.includes("backend") ||
-                name.includes("rest")
-            ) {
-                backend.push(skill.name);
-                return;
-            }
-
-            if (
-                name.includes("postgres") ||
-                name.includes("mysql") ||
-                name.includes("sqlite") ||
-                name.includes("prisma") ||
-                name.includes("redis") ||
-                name.includes("database") ||
-                name.includes("sql")
-            ) {
-                data.push(skill.name);
-                return;
-            }
-
-            if (
-                name.includes("ai") ||
-                name.includes("openai") ||
-                name.includes("gemini") ||
-                name.includes("llm") ||
-                name.includes("machine learning") ||
-                name.includes("automation")
-            ) {
-                ai.push(skill.name);
-                return;
-            }
-
-            frontend.push(skill.name);
         });
 
-        return {
-            frontend,
-            backend,
-            data,
-            ai,
-        };
+        return groups;
     }, [skillList]);
 
     /* ============================================================
@@ -1331,57 +1312,6 @@ export function PortfolioLanding({
                                     <Bot className="h-4 w-4" />
                                     Ask my AI assistant
                                 </button>
-                            </motion.div>
-
-                            <motion.div
-                                variants={{
-                                    hidden: { opacity: 0, y: 12 },
-                                    visible: {
-                                        opacity: 1,
-                                        y: 0,
-                                        transition: { duration: 0.45 },
-                                    },
-                                }}
-                                className="mt-4 flex flex-wrap gap-2.5"
-                            >
-                                <a
-                                    href="/documents/Frunco_Ruiz_CV.pdf"
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className={`group inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-xs font-bold transition hover:-translate-y-0.5 ${secondaryButton}`}
-                                    aria-label="Read Frunco Ruiz CV"
-                                >
-                                    <FileText className="h-3.5 w-3.5" />
-                                    Read CV
-                                </a>
-                                <a
-                                    href="/documents/Frunco_Ruiz_CV.pdf"
-                                    download="Frunco_Ruiz_CV.pdf"
-                                    className={`group inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-xs font-bold transition hover:-translate-y-0.5 ${secondaryButton}`}
-                                    aria-label="Download Frunco Ruiz CV"
-                                >
-                                    <Download className="h-3.5 w-3.5" />
-                                    Download CV
-                                </a>
-                                <a
-                                    href="/documents/Frunco_Ruiz_Resume.pdf"
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className={`group inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-xs font-bold transition hover:-translate-y-0.5 ${secondaryButton}`}
-                                    aria-label="Read Frunco Ruiz resume"
-                                >
-                                    <FileText className="h-3.5 w-3.5" />
-                                    Read Resume
-                                </a>
-                                <a
-                                    href="/documents/Frunco_Ruiz_Resume.pdf"
-                                    download="Frunco_Ruiz_Resume.pdf"
-                                    className={`group inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-xs font-bold transition hover:-translate-y-0.5 ${secondaryButton}`}
-                                    aria-label="Download Frunco Ruiz resume"
-                                >
-                                    <Download className="h-3.5 w-3.5" />
-                                    Download Resume
-                                </a>
                             </motion.div>
 
                             <motion.div
@@ -2240,16 +2170,22 @@ export function PortfolioLanding({
                                             groupedSkills.backend,
                                     },
                                     {
-                                        title: "Data",
+                                        title: "DataBase",
                                         icon: Database,
                                         items:
-                                            groupedSkills.data,
+                                            groupedSkills.database,
                                     },
                                     {
                                         title: "AI & Automation",
                                         icon: Sparkles,
                                         items:
                                             groupedSkills.ai,
+                                    },
+                                    {
+                                        title: "DevOps",
+                                        icon: GitBranch,
+                                        items:
+                                            groupedSkills.devops,
                                     },
                                 ].map(
                                     (
