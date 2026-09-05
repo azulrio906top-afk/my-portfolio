@@ -29,9 +29,17 @@ export default auth((request) => {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (request.auth.user.role !== 'admin') {
+  const user = request.auth.user;
+
+  const role =
+    "role" in user &&
+      typeof user.role === "string"
+      ? user.role
+      : undefined;
+
+  if (role !== "admin") {
     return NextResponse.redirect(
-      new URL('/', request.url),
+      new URL("/", request.url),
     );
   }
 

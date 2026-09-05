@@ -9,10 +9,26 @@ import {
     projectUpdateSchema,
 } from "@/lib/admin-validation";
 
+function getSkillIds(value: unknown): number[] {
+    if (!Array.isArray(value)) {
+        return [];
+    }
+
+    return Array.from(
+        new Set(
+            value
+                .map((item: unknown) => Number(item))
+                .filter(
+                    (item: number): item is number =>
+                        Number.isInteger(item) && item > 0,
+                ),
+        ),
+    );
+}
+
 export async function GET() {
     try {
-        const authResult =
-            await requireAdmin();
+        const authResult = await requireAdmin();
 
         if (!authResult.authorized) {
             return apiError(
@@ -21,20 +37,23 @@ export async function GET() {
             );
         }
 
-        const projects =
-            await prisma.project.findMany({
-                orderBy: [
-                    {
-                        featured: "desc",
-                    },
-                    {
-                        createdAt: "desc",
-                    },
-                ],
-                include: {
-                    projectSkills: { include: { skill: true } },
+        const projects = await prisma.project.findMany({
+            orderBy: [
+                {
+                    featured: "desc",
                 },
-            });
+                {
+                    createdAt: "desc",
+                },
+            ],
+            include: {
+                projectSkills: {
+                    include: {
+                        skill: true,
+                    },
+                },
+            },
+        });
 
         return apiSuccess(projects);
     } catch (error) {
@@ -49,12 +68,9 @@ export async function GET() {
     }
 }
 
-export async function POST(
-    request: Request,
-) {
+export async function POST(request: Request) {
     try {
-        const authResult =
-            await requireAdmin();
+        const authResult = await requireAdmin();
 
         if (!authResult.authorized) {
             return apiError(
@@ -63,10 +79,9 @@ export async function POST(
             );
         }
 
-        const body = await request.json();
+        const body: unknown = await request.json();
 
-        const parsed =
-            projectCreateSchema.safeParse(body);
+        const parsed = projectCreateSchema.safeParse(body);
 
         if (!parsed.success) {
             return apiError(
@@ -76,12 +91,11 @@ export async function POST(
             );
         }
 
-        const existing =
-            await prisma.project.findUnique({
-                where: {
-                    slug: parsed.data.slug,
-                },
-            });
+        const existing = await prisma.project.findUnique({
+            where: {
+                slug: parsed.data.slug,
+            },
+        });
 
         if (existing) {
             return apiError(
@@ -90,14 +104,24 @@ export async function POST(
             );
         }
 
-        const skillIds = Array.from(new Set((body.skillIds ?? [])
-            .map((value: unknown) => Number(value))
-            .filter((value: number) => Number.isInteger(value) && value > 0)));
+        const skillIds = getSkillIds(
+            typeof body === "object" &&
+                body !== null &&
+                "skillIds" in body
+                ? (body as { skillIds?: unknown }).skillIds
+                : undefined,
+        );
 
         const data = {
             ...parsed.data,
             projectSkills: {
-                create: skillIds.map((skillId: number) => ({ skill: { connect: { id: skillId } } })),
+                create: skillIds.map((skillId) => ({
+                    skill: {
+                        connect: {
+                            id: skillId,
+                        },
+                    },
+                })),
             },
             status:
                 parsed.data.status?.toLowerCase() === "featured"
@@ -105,10 +129,9 @@ export async function POST(
                     : parsed.data.status ?? "active",
         };
 
-        const project =
-            await prisma.project.create({
-                data,
-            });
+        const project = await prisma.project.create({
+            data,
+        });
 
         return apiSuccess(project, 201);
     } catch (error) {
@@ -128,31 +151,58 @@ export async function PATCH(request: Request) {
         const authResult = await requireAdmin();
 
         if (!authResult.authorized) {
-            return apiError(authResult.error, authResult.status);
+            return apiError(
+                authResult.error,
+                authResult.status,
+            );
         }
 
-        const body = await request.json();
-        const id = Number(body.id);
+        const body: unknown = await request.json();
+
+        const id = Number(
+            typeof body === "object" &&
+                body !== null &&
+                "id" in body
+                ? (body as { id?: unknown }).id
+                : undefined,
+        );
 
         if (!Number.isInteger(id) || id <= 0) {
-            return apiError("Invalid project ID.", 400);
+            return apiError(
+                "Invalid project ID.",
+                400,
+            );
         }
 
         const parsed = projectUpdateSchema.safeParse(body);
 
         if (!parsed.success) {
-            return apiError("Invalid project data.", 400, parsed.error.flatten());
+            return apiError(
+                "Invalid project data.",
+                400,
+                parsed.error.flatten(),
+            );
         }
 
-        const skillIds = Array.from(new Set((body.skillIds ?? [])
-            .map((value: unknown) => Number(value))
-            .filter((value: number) => Number.isInteger(value) && value > 0)));
+        const skillIds = getSkillIds(
+            typeof body === "object" &&
+                body !== null &&
+                "skillIds" in body
+                ? (body as { skillIds?: unknown }).skillIds
+                : undefined,
+        );
 
         const data = {
             ...parsed.data,
             projectSkills: {
                 deleteMany: {},
-                create: skillIds.map((skillId: number) => ({ skill: { connect: { id: skillId } } })),
+                create: skillIds.map((skillId) => ({
+                    skill: {
+                        connect: {
+                            id: skillId,
+                        },
+                    },
+                })),
             },
             status: parsed.data.featured
                 ? "active"
@@ -161,23 +211,40 @@ export async function PATCH(request: Request) {
                     : parsed.data.status,
         };
 
-        const project = await prisma.$transaction(async (tx) => {
-            if (data.featured === true) {
-                await tx.project.updateMany({
-                    where: { id: { not: id }, featured: true },
-                    data: { featured: false },
-                });
-            }
+        const project = await prisma.$transaction(
+            async (tx) => {
+                if (data.featured === true) {
+                    await tx.project.updateMany({
+                        where: {
+                            id: {
+                                not: id,
+                            },
+                            featured: true,
+                        },
+                        data: {
+                            featured: false,
+                        },
+                    });
+                }
 
-            return tx.project.update({
-                where: { id },
-                data,
-            });
-        });
+                return tx.project.update({
+                    where: {
+                        id,
+                    },
+                    data,
+                });
+            },
+        );
 
         return apiSuccess(project);
     } catch (error) {
-        console.error("PATCH /api/admin/projects:", error);
-        return apiError("Failed to update project.");
+        console.error(
+            "PATCH /api/admin/projects:",
+            error,
+        );
+
+        return apiError(
+            "Failed to update project.",
+        );
     }
 }

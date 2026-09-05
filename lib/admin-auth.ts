@@ -30,7 +30,11 @@ export async function requireAdmin(): Promise<
         };
     }
 
-    const role = session.user.role;
+    const role =
+    "role" in session.user &&
+    typeof session.user.role === "string"
+        ? session.user.role
+        : undefined;
 
     if (role !== "admin") {
         return {

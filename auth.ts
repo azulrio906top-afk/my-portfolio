@@ -1,39 +1,17 @@
-import NextAuth from 'next-auth';
-import Credentials from 'next-auth/providers/credentials';
-import bcrypt from 'bcryptjs';
+import NextAuth from "next-auth";
+import Credentials from "next-auth/providers/credentials";
+import bcrypt from "bcryptjs";
 
-import { ensureDatabase, prisma } from '@/lib/db';
+import { ensureDatabase, prisma } from "@/lib/db";
 import {
     ADMIN_EMAIL,
     ADMIN_PASSWORD,
-} from '@/lib/admin';
-
-declare module 'next-auth' {
-    interface User {
-        role?: string;
-    }
-
-    interface Session {
-        user: User & {
-            id?: string;
-            role?: string;
-        };
-    }
-}
-
-declare module 'next-auth/jwt' {
-    interface JWT {
-        role?: string;
-    }
-}
+} from "@/lib/admin";
 
 /*
  * ---------------------------------------------------------
  * AUTHENTICATION
  * ---------------------------------------------------------
- *
- * Database:
- *   SQLite + Prisma
  *
  * Authentication:
  *   NextAuth Credentials
@@ -59,27 +37,27 @@ export const {
     secret: process.env.AUTH_SECRET,
 
     session: {
-        strategy: 'jwt',
+        strategy: "jwt",
     },
 
     pages: {
-        signIn: '/admin/login',
+        signIn: "/admin/login",
     },
 
     providers: [
         Credentials({
-            name: 'Admin credentials',
+            name: "Admin credentials",
 
             credentials: {
                 email: {
-                    label: 'Email',
-                    type: 'email',
-                    placeholder: 'admin@example.com',
+                    label: "Email",
+                    type: "email",
+                    placeholder: "admin@example.com",
                 },
 
                 password: {
-                    label: 'Password',
-                    type: 'password',
+                    label: "Password",
+                    type: "password",
                 },
             },
 
@@ -91,9 +69,7 @@ export const {
                     return null;
                 }
 
-                const email = String(
-                    credentials.email,
-                )
+                const email = String(credentials.email)
                     .trim()
                     .toLowerCase();
 
@@ -106,20 +82,19 @@ export const {
                 }
 
                 /*
-                 * Make sure Prisma/SQLite is ready.
+                 * Make sure Prisma/database is ready.
                  */
                 try {
                     await ensureDatabase();
                 } catch (error) {
                     console.error(
-                        'Database initialization failed:',
+                        "Database initialization failed:",
                         error,
                     );
 
                     /*
-                     * If the database cannot initialize,
-                     * allow the environment admin account
-                     * to continue working.
+                     * Continue so the bootstrap admin can
+                     * still authenticate.
                      */
                 }
 
@@ -128,13 +103,14 @@ export const {
                  * BOOTSTRAP ADMIN
                  * -------------------------------------------------
                  *
-                 * This allows the application to start with an
-                 * administrator even when adminUser has not yet
-                 * been seeded.
+                 * Allows the application to start with an
+                 * administrator even when AdminUser has not
+                 * been seeded yet.
                  */
+
                 const isBootstrapAdmin =
                     email ===
-                        ADMIN_EMAIL.trim().toLowerCase() &&
+                    ADMIN_EMAIL.trim().toLowerCase() &&
                     password === ADMIN_PASSWORD;
 
                 if (isBootstrapAdmin) {
@@ -166,12 +142,12 @@ export const {
                         const admin =
                             await prisma.adminUser.create({
                                 data: {
-                                    name: 'Portfolio Admin',
+                                    name: "Portfolio Admin",
                                     email: ADMIN_EMAIL
                                         .trim()
                                         .toLowerCase(),
                                     passwordHash,
-                                    role: 'admin',
+                                    role: "admin",
                                 },
                             });
 
@@ -183,20 +159,21 @@ export const {
                         };
                     } catch (error) {
                         console.error(
-                            'Bootstrap admin error:',
+                            "Bootstrap admin error:",
                             error,
                         );
 
                         /*
                          * Database may not be available yet.
-                         * The environment credentials are still
-                         * allowed to authenticate the administrator.
+                         * Allow environment credentials to
+                         * authenticate the administrator.
                          */
+
                         return {
-                            id: 'admin-bootstrap',
-                            name: 'Portfolio Admin',
+                            id: "admin-bootstrap",
+                            name: "Portfolio Admin",
                             email: ADMIN_EMAIL,
-                            role: 'admin',
+                            role: "admin",
                         };
                     }
                 }
@@ -220,11 +197,12 @@ export const {
                     }
 
                     /*
-                     * Only administrators may enter /admin.
+                     * Only administrators may access /admin.
                      */
+
                     if (
                         admin.role.toLowerCase() !==
-                        'admin'
+                        "admin"
                     ) {
                         return null;
                     }
@@ -247,7 +225,7 @@ export const {
                     };
                 } catch (error) {
                     console.error(
-                        'Admin authentication error:',
+                        "Admin authentication error:",
                         error,
                     );
 
@@ -263,13 +241,14 @@ export const {
          * JWT
          * -------------------------------------------------------
          *
-         * Store the administrator role inside the JWT so
-         * server-side authorization can check it without
-         * querying SQLite on every request.
+         * Store the administrator role inside the JWT.
          */
+
         async jwt({ token, user }) {
             if (user) {
-                token.role = user.role;
+                "role" in user && typeof user.role === "string"
+                    ? user.role
+                    : undefined;
             }
 
             return token;
@@ -282,17 +261,22 @@ export const {
          *
          * Expose id + role to the application.
          */
+
         async session({ session, token }) {
             if (session.user) {
                 session.user.id =
-                    typeof token.sub === 'string'
+                    typeof token.sub === "string"
                         ? token.sub
-                        : '';
+                        : "";
 
-                session.user.role =
-                    typeof token.role === 'string'
+                const user = session.user as typeof session.user & {
+                    role?: string;
+                };
+
+                user.role =
+                    typeof token.role === "string"
                         ? token.role
-                        : '';
+                        : "";
             }
 
             return session;

@@ -26,7 +26,13 @@ async function requireAdmin() {
         throw new Error("Unauthorized");
     }
 
-    if (session.user.role !== "admin") {
+    const role =
+        "role" in session.user &&
+        typeof session.user.role === "string"
+            ? session.user.role
+            : undefined;
+
+    if (role !== "admin") {
         throw new Error("Forbidden");
     }
 
