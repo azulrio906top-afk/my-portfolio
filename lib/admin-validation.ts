@@ -130,6 +130,14 @@ export const profileUpdateSchema = z.object({
         .max(1000),
 
     availability: optionalText,
+    // add these
+    website: optionalUrl,
+
+    github: optionalUrl,
+
+    linkedin: optionalUrl,
+
+    avatarUrl: optionalText,
 });
 
 export const experienceCreateSchema =
