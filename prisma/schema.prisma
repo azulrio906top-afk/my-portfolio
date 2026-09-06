@@ -64,7 +64,7 @@ model Profile {
   summary      String
   availability String?
   website      String?
-  githubUrl    String?
+  github       String?
   linkedin     String?
   avatarUrl    String?
   createdAt    DateTime @default(now())
