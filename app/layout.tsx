@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Frunco Ruiz — Full-Stack Developer & Product Designer",
-  description: "A full-stack developer and product designer building modern, production-ready digital products, dashboards, APIs, and AI-powered experiences.",
+  description: "Portfolio of Frunco Ruiz, Full Stack Developer specializing in Next.js, React, Prisma and AI applications.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
