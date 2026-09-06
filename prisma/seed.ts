@@ -340,7 +340,7 @@ async function main() {
             githubUrl: null,
 
             imageUrl:
-                "/projects/ai-portfolio-assistant.svg",
+                "https://images.openai.com/static-rsc-4/lodg0O4AqbUeWvgtChZVyqx-3wKslyyh_m5-i249BFvE9IiyhSSH1ikKkBsYz0-Di61FlZciEbMo5QjQBNs-IiqR30hCgqgII7LkLc7NVpuxSxAzT0pzPRFqzuobFtm44yibinjG-lMtpAU31it11cfor3-b3l-jo0ZeBq0EMIc?purpose=inline",
 
             featured: true,
 
@@ -368,7 +368,7 @@ async function main() {
             githubUrl: null,
 
             imageUrl:
-                "/projects/saas-dashboard.svg",
+                "https://images.openai.com/static-rsc-4/FCoYrIEYTL2IA7_q7EO4ZrfS5yF1Or5aqVdBqQIrFXSqAa63qe7mTOp3iT84XB-qPPUoFJwNZnPMtt8-Bm9iBplN_pGAEeoIuzy-MinAQ8RpqKDhlGJ2UQURBKR990BSRWsn03N0HfRfJ-CZxDgJg0A21oREAmUqkYsBrNhBtIY?purpose=inline",
 
             featured: false,
 
@@ -396,7 +396,7 @@ async function main() {
             githubUrl: null,
 
             imageUrl:
-                "/projects/business-platform.svg",
+                "https://images.openai.com/static-rsc-4/otUJZMMKhVdNS5GezA2tGRAE0bST_Sem-SYsOSYLPSxVRtGnfX5bHMM3rgjRjvmhUOLyuIWRJDynBvdmiWpVkk76mEJjAo7KB6WiS7WdMIgYIIQSSALbcM3-gvXhcpZ7aXn55oXpx-h3tWU64SAIE0bfQ85w4FhaAiUMmnj_hmU?purpose=inline",
 
             featured: false,
 
@@ -424,7 +424,7 @@ async function main() {
             githubUrl: null,
 
             imageUrl:
-                "/projects/ai-automation.svg",
+                "https://images.openai.com/static-rsc-4/zdIMCP2lR9CXDcT7ceSnTRMzOq40179fUdIi1F0ul6TUxJ0mCS5GkBuDmwM_jMz7NJEy7tjYEFspuMDlQhswh1rnAGbLHzwflaOKkaGYu7l0gNezyooqO8nml7PF2rkFte7mD2Og7nXFDOcR4d7sr8exXqP7ugV_k6uk_eZjgVk?purpose=inline",
 
             featured: false,
 
@@ -452,7 +452,7 @@ async function main() {
             githubUrl: null,
 
             imageUrl:
-                "/projects/portfolio-platform.svg",
+                "https://s3-figma-hubfile-images-production-cdn-cgi.figma.com/cdn-cgi/image/format=auto,quality=85/hub/file/carousel/img/be385a5b5b4013e48acacfc694e60beca2cb013a",
 
             featured: false,
 

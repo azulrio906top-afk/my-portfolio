@@ -1,2 +1,0 @@
-ALTER TABLE "Experience" ADD COLUMN "name" TEXT NOT NULL DEFAULT '';
-ALTER TABLE "Experience" ADD COLUMN "location" TEXT;

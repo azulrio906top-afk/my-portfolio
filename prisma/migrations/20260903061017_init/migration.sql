@@ -1,3 +1,0 @@
--- Historical migration retained for compatibility.
--- The preceding migration already creates the application tables.
--- Current profile fields are added by the following migration.
