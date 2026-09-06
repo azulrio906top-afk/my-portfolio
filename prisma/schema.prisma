@@ -63,6 +63,10 @@ model Profile {
   location     String?
   summary      String
   availability String?
+  website      String?
+  githubUrl    String?
+  linkedin     String?
+  avatarUrl    String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
