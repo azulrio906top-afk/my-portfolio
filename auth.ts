@@ -246,9 +246,15 @@ export const {
 
         async jwt({ token, user }) {
             if (user) {
-                "role" in user && typeof user.role === "string"
-                    ? user.role
-                    : undefined;
+                const role =
+                    "role" in user &&
+                    typeof user.role === "string"
+                        ? user.role
+                        : undefined;
+
+                if (role) {
+                    token.role = role;
+                }
             }
 
             return token;

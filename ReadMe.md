@@ -18,7 +18,7 @@ A full-stack portfolio application built with Next.js, React, TypeScript, Tailwi
 - Profile management
 - Experience management
 - AI portfolio chatbot
-- SQLite + Prisma schema and seed data
+- PostgreSQL + Prisma schema and seed data
 - REST-style API route for chat
 - Docker-ready project structure
 
@@ -40,7 +40,8 @@ npm install
 3. Set at least:
 
 ```env
-DATABASE_URL="file:./dev.db"
+DATABASE_URL="postgresql://USER:PASSWORD@HOST/DATABASE?sslmode=require"
+DIRECT_URL="postgresql://USER:PASSWORD@HOST/DATABASE?sslmode=require"
 AUTH_SECRET="your-long-random-secret"
 ADMIN_EMAIL="admin@portfolio.dev"
 ADMIN_PASSWORD="change-this-password"
