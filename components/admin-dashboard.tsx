@@ -65,6 +65,12 @@ type Project = {
     tags: string;
     featured: boolean;
     description: string;
+    challenge?: string | null;
+    solution?: string | null;
+    architecture?: string | null;
+    role?: string | null;
+    impact?: string | null;
+    category?: string | null;
     skills?: ProjectSkill[];
 };
 
@@ -779,6 +785,26 @@ export function AdminDashboard({
                                         <Moon className="h-4 w-4" />
                                     )}
                                 </button>
+
+                                <a
+                                    href="/admin/content"
+                                    className={`
+                                        hidden h-10
+                                        items-center gap-2
+                                        rounded-xl border
+                                        px-3.5
+                                        text-xs font-semibold
+                                        sm:flex
+                                        ${
+                                            dark
+                                                ? "border-slate-800 hover:bg-slate-900"
+                                                : "border-slate-200 hover:bg-slate-50"
+                                        }
+                                    `}
+                                >
+                                    <FileText className="h-3.5 w-3.5" />
+                                    Homepage CMS
+                                </a>
 
                                 <a
                                     href="/"
@@ -2513,6 +2539,13 @@ function ProjectForm({
                 />
 
                 <input
+                    name="category"
+                    defaultValue={project?.category ?? ""}
+                    placeholder="Category (e.g. AI Application)"
+                    className="admin-input"
+                />
+
+                <input
                     name="url"
                     defaultValue={
                         project?.url ?? ""
@@ -2642,6 +2675,14 @@ function ProjectForm({
                     rows={6}
                     className="admin-input resize-none md:col-span-2"
                 />
+
+                <div className="md:col-span-2 grid gap-3 md:grid-cols-2">
+                    <textarea name="challenge" defaultValue={project?.challenge ?? ""} placeholder="The challenge this project solved" rows={4} className="admin-input resize-none" />
+                    <textarea name="solution" defaultValue={project?.solution ?? ""} placeholder="The solution you built" rows={4} className="admin-input resize-none" />
+                    <textarea name="architecture" defaultValue={project?.architecture ?? ""} placeholder="Architecture / technical approach" rows={4} className="admin-input resize-none" />
+                    <textarea name="role" defaultValue={project?.role ?? ""} placeholder="Your role and responsibilities" rows={4} className="admin-input resize-none" />
+                    <textarea name="impact" defaultValue={project?.impact ?? ""} placeholder="Business impact / outcome" rows={4} className="admin-input resize-none md:col-span-2" />
+                </div>
             </div>
 
             <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">

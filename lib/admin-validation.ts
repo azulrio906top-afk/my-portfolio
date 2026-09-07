@@ -65,6 +65,13 @@ export const projectCreateSchema = z.object({
         .trim()
         .min(1, "Project description is required."),
 
+    challenge: optionalText,
+    solution: optionalText,
+    architecture: optionalText,
+    role: optionalText,
+    impact: optionalText,
+    category: optionalText,
+
     url: optionalUrl,
 
     githubUrl: optionalUrl,

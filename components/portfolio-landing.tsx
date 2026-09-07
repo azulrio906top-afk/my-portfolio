@@ -77,11 +77,32 @@ type ProjectItem = {
     githubUrl?: string | null;
     imageUrl?: string | null;
     tags?: string | null;
+    description?: string | null;
+    challenge?: string | null;
+    solution?: string | null;
+    architecture?: string | null;
+    role?: string | null;
+    impact?: string | null;
+    category?: string | null;
     skills?: Array<{ id: number; name: string; category: string }>;
 };
 
 type PortfolioLandingProps = {
     profile: ProfileItem;
+    content?: {
+        heroBadge?: string | null;
+        heroTitle?: string | null;
+        heroDescription?: string | null;
+        aboutTitle?: string | null;
+        aboutText?: string | null;
+        services?: Array<{ title: string; description: string }>;
+        whyTitle?: string | null;
+        whyItems?: Array<{ title: string; description: string }>;
+        ctaTitle?: string | null;
+        ctaDescription?: string | null;
+        ctaPrimaryText?: string | null;
+        ctaSecondaryText?: string | null;
+    } | null;
     skillList: SkillItem[];
     projectList: ProjectItem[];
 };
@@ -113,7 +134,7 @@ const navItems = [
     },
 ];
 
-const services = [
+const fallbackServices = [
     {
         number: "01",
         icon: Layers3,
@@ -142,7 +163,7 @@ const services = [
         text:
             "Add useful AI assistants, intelligent search, automation and AI-powered workflows to existing products.",
     },
-];
+] ;
 
 const fallbackSkillGroups = {
     frontend: [
@@ -313,6 +334,7 @@ export function PortfolioLanding({
     profile,
     skillList,
     projectList,
+    content,
 }: PortfolioLandingProps) {
     const [theme, setTheme] =
         useState<"light" | "dark">("light");
@@ -330,6 +352,22 @@ export function PortfolioLanding({
         useState("work");
 
     const openChat = useChatbotStore((state) => state.openChat);
+
+    const services = content?.services?.length
+        ? content.services.map((service, index) => ({
+              number: String(index + 1).padStart(2, "0"),
+              icon:
+                  index % 4 === 0
+                      ? Layers3
+                      : index % 4 === 1
+                          ? Zap
+                          : index % 4 === 2
+                              ? Database
+                              : Sparkles,
+              title: service.title,
+              text: service.description,
+          }))
+        : fallbackServices;
 
     /* ============================================================
        THEME

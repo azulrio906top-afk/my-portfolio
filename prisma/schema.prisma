@@ -27,6 +27,12 @@ model Project {
   slug        String   @unique
   summary     String
   description String
+  challenge   String?
+  solution    String?
+  architecture String?
+  role        String?
+  impact      String?
+  category    String?
   url         String?
   githubUrl   String?
   imageUrl    String?
@@ -113,20 +119,19 @@ model ProjectSkill {
 
 
 model SiteContent {
-  id Int @id @default(autoincrement())
-
-  heroBadge String?
-  heroTitle String?
+  id              Int      @id @default(autoincrement())
+  heroBadge       String?
+  heroTitle       String?
   heroDescription String?
-
-  aboutTitle String?
-  aboutText String?
-
-  services Json?
-
-  ctaTitle String?
-  ctaDescription String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  aboutTitle      String?
+  aboutText       String?
+  services        Json?
+  whyTitle        String?
+  whyItems        Json?
+  ctaTitle        String?
+  ctaDescription  String?
+  ctaPrimaryText  String?
+  ctaSecondaryText String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }

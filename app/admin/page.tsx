@@ -38,6 +38,12 @@ type AdminProject = {
     status: string;
     summary: string;
     description: string;
+    challenge: string | null;
+    solution: string | null;
+    architecture: string | null;
+    role: string | null;
+    impact: string | null;
+    category: string | null;
     url: string | null;
     githubUrl: string | null;
     imageUrl: string | null;
@@ -101,6 +107,12 @@ type ProjectRow = {
     status: string;
     summary: string;
     description: string;
+    challenge: string | null;
+    solution: string | null;
+    architecture: string | null;
+    role: string | null;
+    impact: string | null;
+    category: string | null;
     url: string | null;
     githubUrl: string | null;
     imageUrl: string | null;
@@ -135,6 +147,12 @@ async function loadProjects(): Promise<AdminProject[]> {
                 status: project.status,
                 summary: project.summary,
                 description: project.description,
+                challenge: project.challenge,
+                solution: project.solution,
+                architecture: project.architecture,
+                role: project.role,
+                impact: project.impact,
+                category: project.category,
                 url: project.url,
                 githubUrl: project.githubUrl,
                 imageUrl: project.imageUrl,

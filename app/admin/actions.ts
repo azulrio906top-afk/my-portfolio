@@ -294,6 +294,12 @@ export async function createProject(
         formData,
         "description",
     );
+    const challenge = nullableText(formData, "challenge");
+    const solution = nullableText(formData, "solution");
+    const architecture = nullableText(formData, "architecture");
+    const role = nullableText(formData, "role");
+    const impact = nullableText(formData, "impact");
+    const category = nullableText(formData, "category");
 
     const url = nullableText(formData, "url");
     const githubUrl = nullableText(
@@ -362,6 +368,12 @@ export async function createProject(
                 slug,
                 summary,
                 description,
+                challenge,
+                solution,
+                architecture,
+                role,
+                impact,
+                category,
                 url,
                 githubUrl,
                 imageUrl,
@@ -405,6 +417,12 @@ export async function updateProject(
         formData,
         "description",
     );
+    const challenge = nullableText(formData, "challenge");
+    const solution = nullableText(formData, "solution");
+    const architecture = nullableText(formData, "architecture");
+    const role = nullableText(formData, "role");
+    const impact = nullableText(formData, "impact");
+    const category = nullableText(formData, "category");
 
     const url = nullableText(formData, "url");
     const githubUrl = nullableText(
@@ -501,6 +519,12 @@ export async function updateProject(
                     slug,
                     summary,
                     description,
+                    challenge,
+                    solution,
+                    architecture,
+                    role,
+                    impact,
+                    category,
                     url,
                     githubUrl,
                     imageUrl,

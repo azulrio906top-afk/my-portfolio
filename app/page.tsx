@@ -35,7 +35,7 @@ const fallbackProfile: ProfileData = {
 export default async function HomePage() {
   await ensureDatabase();
 
-  const [profile, skills, projects, siteContent] = await Promise.all([
+  const [profile, skills, projects, content] = await Promise.all([
     prisma.profile.findFirst({ orderBy: { id: "asc" } }).catch(() => null),
     prisma.skill.findMany({ orderBy: { order: "asc" } }).catch(() => []),
     prisma.project.findMany({
@@ -53,7 +53,7 @@ export default async function HomePage() {
   return (
     <PortfolioLanding
       profile={profile ?? fallbackProfile}
-      content={siteContent}
+      content={content}
       skillList={skills.length
         ? skills.map((skill: typeof skills[number]) => ({
             id: skill.id, 
@@ -66,6 +66,13 @@ export default async function HomePage() {
         slug: project.slug,
         title: project.title,
         summary: project.summary,
+        description: project.description,
+        challenge: project.challenge,
+        solution: project.solution,
+        architecture: project.architecture,
+        role: project.role,
+        impact: project.impact,
+        category: project.category,
         status: project.status,
         featured: project.featured,
         url: project.url,
