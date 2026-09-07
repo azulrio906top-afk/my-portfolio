@@ -1,5 +1,8 @@
 "use client";
 
+import { ProcessSection } from "./sections/process";
+import { TestimonialsSection } from "./sections/testimonials";
+
 import {
     useEffect,
     useMemo,

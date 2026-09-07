@@ -1,0 +1,3 @@
+export function ProcessSection(){
+ const steps=[['01','Discover','Understand goals, users, and business problems.'],['02','Design','Create the right architecture and user experience.'],['03','Build','Develop clean, scalable, production-ready software.'],['04','Deliver','Deploy, optimize, and support the product.']];
+ return <section id="process" className="mx-auto max-w-6xl px-6 py-20"><h2 className="text-4xl font-black mb-10">My Process</h2><div className="grid gap-6 md:grid-cols-4">{steps.map(s=><div key={s[0]} className="rounded-2xl border p-6"><div className="text-sm font-bold">{s[0]}</div><h3 className="mt-3 text-xl font-bold">{s[1]}</h3><p className="mt-2 text-muted-foreground">{s[2]}</p></div>)}</div></section>}
