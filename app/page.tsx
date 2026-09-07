@@ -54,7 +54,7 @@ export default async function HomePage() {
       profile={profile ?? fallbackProfile}
       skillList={skills.length
         ? skills.map((skill: typeof skills[number]) => ({
-            id: skill.id,
+            id: skill.id, 
             name: skill.name,
             category: skill.category,
           }))

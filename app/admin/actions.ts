@@ -652,16 +652,35 @@ export async function updateProfile(
             avatarUrl,
         };
 
-        if (id) {
+        // The profile form does not need to expose the database id.
+        // If no id is submitted, update the existing first profile
+        // instead of creating a second Profile row. The public site
+        // reads the first profile, so creating duplicates makes saved
+        // changes appear to have no effect.
+        const existingProfile = id
+            ? null
+            : await prisma.profile.findFirst({
+                  orderBy: { id: "asc" },
+              });
+
+        const profileId = id ?? existingProfile?.id ?? null;
+
+        if (profileId) {
             await prisma.profile.update({
                 where: {
-                    id,
+                    id: profileId,
                 },
                 data,
             });
         } else {
+            // Required fields not exposed by this form get sensible
+            // defaults when the database has no profile yet.
             await prisma.profile.create({
-                data,
+                data: {
+                    ...data,
+                    title: headline,
+                    summary: bio,
+                },
             });
         }
 
