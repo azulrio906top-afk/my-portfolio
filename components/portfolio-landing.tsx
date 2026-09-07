@@ -60,6 +60,9 @@ type ProfileItem = {
     email?: string | null;
     location?: string | null;
     summary: string;
+    description?: string | null;
+    category?: string | null;
+    features?: string | null;
     availability?: string | null;
 };
 

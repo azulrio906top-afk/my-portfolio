@@ -110,3 +110,23 @@ model ProjectSkill {
   @@id([projectId, skillId])
   @@index([skillId])
 }
+
+
+model SiteContent {
+  id Int @id @default(autoincrement())
+
+  heroBadge String?
+  heroTitle String?
+  heroDescription String?
+
+  aboutTitle String?
+  aboutText String?
+
+  services Json?
+
+  ctaTitle String?
+  ctaDescription String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

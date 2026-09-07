@@ -23,9 +23,9 @@ type ProfileData = {
 
 const fallbackProfile: ProfileData = {
   name: "Frunco Ruiz",
-  title: "Full-Stack Developer & Product Designer",
-  headline: "I build digital products that move businesses forward.",
-  bio: "Full-stack developer and product designer helping startups and growing businesses turn ideas into fast, elegant and production-ready software.",
+  title: "Full-Stack Developer | AI Product Builder",
+  headline: "I build AI-powered web applications and digital products that help businesses grow faster.",
+  bio: "I help startups and businesses transform ideas into scalable software through full-stack development, AI integration, and modern product design.",
   email: null,
   location: "United States",
   summary: "I design and build modern web applications with a strong focus on usability, performance, maintainability and real business value.",
@@ -35,7 +35,7 @@ const fallbackProfile: ProfileData = {
 export default async function HomePage() {
   await ensureDatabase();
 
-  const [profile, skills, projects] = await Promise.all([
+  const [profile, skills, projects, siteContent] = await Promise.all([
     prisma.profile.findFirst({ orderBy: { id: "asc" } }).catch(() => null),
     prisma.skill.findMany({ orderBy: { order: "asc" } }).catch(() => []),
     prisma.project.findMany({
@@ -47,11 +47,13 @@ export default async function HomePage() {
         { createdAt: "desc" },
       ],
     }).catch(() => []),
+    prisma.siteContent.findFirst().catch(() => null),
   ]);
 
   return (
     <PortfolioLanding
       profile={profile ?? fallbackProfile}
+      content={siteContent}
       skillList={skills.length
         ? skills.map((skill: typeof skills[number]) => ({
             id: skill.id, 
