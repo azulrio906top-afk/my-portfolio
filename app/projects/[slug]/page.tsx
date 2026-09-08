@@ -187,7 +187,7 @@ export default async function ProjectCaseStudy({
             </span>
 
             <span className="text-xs font-semibold text-slate-500">
-              Case study
+              Details...
             </span>
 
           </div>

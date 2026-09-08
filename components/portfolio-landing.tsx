@@ -1809,7 +1809,7 @@ export function PortfolioLanding({
                                                         href={`/projects/${project.slug}`}
                                                         className="group/link inline-flex items-center gap-2 rounded-full bg-slate-950 px-4 py-2.5 text-xs font-bold text-white transition hover:-translate-y-0.5 hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200"
                                                     >
-                                                        Case study
+                                                        Details...
                                                         <ArrowUpRight className="h-3.5 w-3.5 transition group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5" />
                                                     </a>
 
